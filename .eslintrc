@@ -1,0 +1,22 @@
+{
+  "extends": "airbnb",
+  "plugins": [
+    "react"
+  ],
+  "env": {
+    "jasmine": true,
+    "es6": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 6,
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "rules": {
+    "import/no-unresolved": 0,
+    // Extend max line length to 120 chars
+    "max-len": ["error", { "code": 120 }],
+  },
+  "globals": {}
+}
