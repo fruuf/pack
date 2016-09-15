@@ -1,18 +1,18 @@
-/* global document */
+/* eslint-disable prefer-arrow-callback */
+/* global document, window */
+
 const React = require('react');
-const { render } = require('react-dom');
-const { AppContainer } = require('react-hot-loader');
+const render = require('react-dom').render;
+const AppContainer = require('react-hot-loader').AppContainer;
 
 // eslint-disable-next-line global-require
 const App = require('main').default;
-let renderTarget = document.getElementById('render');
-
-if (!renderTarget) {
-  renderTarget = document.createElement('div');
+const renderTarget = document.getElementById('render') || document.createElement('div');
+if (!document.body.contains(renderTarget)) {
   document.body.appendChild(renderTarget);
 }
 
-window.onload = () => {
+window.onload = function () {
   render(
     React.createElement(
       AppContainer,
@@ -24,7 +24,7 @@ window.onload = () => {
 };
 
 if (module.hot) {
-  module.hot.accept('main', () => {
+  module.hot.accept('main', function () {
     // eslint-disable-next-line global-require
     const NewApp = require('main').default;
     render(
