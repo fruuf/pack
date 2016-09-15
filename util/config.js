@@ -33,12 +33,14 @@ module.exports = (options) => {
   const main = options.main;
   const node = options.node;
   const proxy = !!options.proxy;
+  const env = options.env;
   return {
     entry: [
       (node && watch) && 'webpack/hot/poll?1000',
       (!node && watch && react) && 'react-hot-loader/patch',
       (!node && watch) && `webpack-dev-server/client?http://localhost:${port}/`,
       (!node && watch) && 'webpack/hot/dev-server',
+      (node && env) && path.join(__dirname, 'load-env'),
       (node || !react) && path.join(root, src, main),
       (!node && react) && path.join(__dirname, 'react'),
     ].filter(filter => !!filter),
