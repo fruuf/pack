@@ -1,7 +1,7 @@
 {
   "name": "pack",
-  "version": "0.1.1",
-  "description": "webpack cli",
+  "version": "0.1.2",
+  "description": "pack cli",
   "bin": {
     "pack": ".bin/pack"
   },
@@ -34,9 +34,7 @@
     "eslint-plugin-react": "^5.1.1",
     "extract-text-webpack-plugin": "^1.0.1",
     "file-loader": "^0.9.0",
-    "html-loader": "^0.4.3",
     "html-webpack-plugin": "^2.22.0",
-    "ignore-styles": "^4.0.0",
     "image-webpack-loader": "^2.0.0",
     "json-loader": "^0.5.4",
     "node-sass": "^3.8.0",
@@ -49,21 +47,5 @@
     "webpack": "^1.13.1",
     "webpack-dev-server": "^1.15.1",
     "webpack-validator": "^2.2.7"
-  },
-  "eslintConfig": {
-    "env": {
-      "es6": true,
-      "node": true,
-      "browser": true
-    },
-    "rules": {
-      "quotes": [
-        2,
-        "single"
-      ]
-    }
-  },
-  "devDependencies": {
-
   }
 }
