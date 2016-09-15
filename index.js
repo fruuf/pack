@@ -9,11 +9,12 @@ const path = require('path');
 let serverUpdateCount = 0;
 
 commander
-  .version('0.1.2')
+  .version('0.1.3')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
   .option('-r, --react', 'enable react', false)
+  .option('-e, --env', 'load .env file', false)
   .option('-s --src [srcdir]', 'source directory [src]', 'src')
   .option('-o, --output [directory]', 'output directory [dist]', 'dist')
   .option('-a --assets [pubdir]', 'assets directory []', '')
@@ -63,16 +64,14 @@ if (commander.watch && !commander.node) {
     contentBase: (commander.static && !commander.proxy) && path.join(process.cwd(), commander.static),
   });
   server.listen(commander.port);
-  if (!commander.proxy) {
-    console.log(`http://localhost:${commander.port}`);
-  }
+  console.log(`http://localhost:${commander.port}`);
 } else {
   webpack(config, (directError, result) => {
     const errors = (directError && [directError])
       || (result && result.compilation && result.compilation.errors)
       || ([]);
     if (errors.length) {
-      errors.forEach(error => console.log(error));
+      errors.forEach(error => console.error(error.message || error));
     } else if (commander.node && commander.watch) {
       console.log(`${config.output.path}${serverUpdateCount ? ` (${serverUpdateCount})` : ''}`);
       serverUpdateCount++;
