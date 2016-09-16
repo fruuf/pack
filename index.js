@@ -9,7 +9,7 @@ const path = require('path');
 let serverUpdateCount = 0;
 
 commander
-  .version('0.1.4')
+  .version('0.1.5')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
@@ -66,17 +66,11 @@ if (commander.watch && !commander.node) {
   server.listen(commander.port);
   console.log(`http://localhost:${commander.port}`);
 } else {
-  webpack(config, (directError, result) => {
-    const errors = (directError && [directError])
-      || (result && result.compilation && result.compilation.errors)
-      || ([]);
-    if (errors.length) {
-      errors.forEach(error => console.error(error.message || error));
-    } else if (commander.node && commander.watch) {
-      console.log(`${config.output.path}${serverUpdateCount ? ` (${serverUpdateCount})` : ''}`);
-      serverUpdateCount++;
-    } else {
-      console.log(config.output.path);
-    }
+  webpack(config, (directError, stats) => {
+    if (directError) throw new Error(directError);
+    console.log(stats.toString({
+      chunks: false, // Makes the build much quieter
+      colors: true,
+    }));
   });
 }

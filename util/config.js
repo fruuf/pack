@@ -3,6 +3,10 @@ const webpack = require('webpack');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const fs = require('fs');
+const autoprefixer = require('autoprefixer');
+const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
+const findCacheDir = require('find-cache-dir');
+
 
 const ensureExists = fn => {
   try {
@@ -19,6 +23,11 @@ fs.readdirSync('node_modules')
   .forEach((mod) => {
     nodeModules[mod] = `commonjs ${mod}`;
   });
+
+const nodePaths = (process.env.NODE_PATH || '')
+  .split(process.platform === 'win32' ? ';' : ':')
+  .filter(Boolean)
+  .map(p => path.resolve(p));
 
 module.exports = (options) => {
   const root = options.root;
@@ -41,27 +50,25 @@ module.exports = (options) => {
       (!node && watch) && `webpack-dev-server/client?http://localhost:${port}/`,
       (!node && watch) && 'webpack/hot/dev-server',
       (node && env) && path.join(__dirname, 'load-env'),
+      (!node && !watch) && path.join(__dirname, 'polyfills'),
       (node || !react) && path.join(root, src, main),
       (!node && react) && path.join(__dirname, 'react'),
-    ].filter(filter => !!filter),
+    ].filter(Boolean),
     output: {
       path: path.join(root, output),
       publicPath: assets,
-      filename: `${bundle}.js`,
+      chunkFilename: `${node ? '' : 'js/'}${bundle}.chunk[hash:base64:6].js`,
+      filename: `${node ? '' : 'js/'}${bundle}.js`,
+      pathinfo: !!watch,
     },
     target: node ? 'node' : 'web',
     externals: node ? nodeModules : {},
     context: root,
     resolve: {
-      extensions: [''].concat([
-        '.js',
-        '.json',
-        !node && '.scss',
-        !node && '.css',
-      ].filter(filter => !!filter)),
+      extensions: ['', '.js', '.json'],
       fallback: [
         react && ensureExists(path.join(root, src, components)),
-      ].filter(filter => !!filter),
+      ].filter(Boolean).concat(nodePaths),
       alias: {
         main: path.join(root, src, main),
       },
@@ -74,11 +81,13 @@ module.exports = (options) => {
           loader: 'babel',
           exclude: /node_modules/,
           query: {
+            babelrc: false,
+            cacheDirectory: watch && findCacheDir({ name: 'pack' }),
             presets: ['airbnb'],
             plugins: [
               (react && watch && !node) && 'react-hot-loader/babel',
               ['babel-root-slash-import', { rootPathSuffix: src }],
-            ].filter(filter => !!filter),
+            ].filter(Boolean),
           },
         },
         {
@@ -86,33 +95,37 @@ module.exports = (options) => {
           loader: 'json',
         },
         !node && {
-          test: /\.(woff|ttf|eot|woff2|svg)$/,
-          loaders: ['url?limit=25000'],
+          test: /\.(woff|ttf|eot|woff2|svg|ico|otf|webp)$/,
+          loaders: ['url?limit=25000&name=media/[name].[hash:base64:6].[ext]'],
         },
         (!node && watch) && {
           test: /(\.scss|\.css)$/,
           loaders: ['style', 'css', 'sass'],
         },
         (!node && watch) && {
-          test: /\.(png|jpg|gif)$/,
+          test: /\.(png|jpg|jpeg|gif)$/,
           loaders: [
-            'url?limit=25000',
+            'url?limit=25000&name=images/[name].[hash:base64:6].[ext]',
           ],
         },
         (!node && !watch) && {
           test: /(\.scss|\.css)$/,
-          loader: ExtractTextPlugin.extract('style', 'css!sass'),
+          loader: ExtractTextPlugin.extract('style', ['css?-autoprefixer', 'postcss', 'sass']),
         },
         (!node && !watch) && {
-          test: /\.(png|jpg|gif)$/,
+          test: /\.(png|jpg|jpeg|gif)$/,
           loaders: [
-            'url?limit=25000',
+            'url?limit=25000&name=images/[name].[hash:base64:6].[ext]',
             'image-webpack?optimizationLevel=7&interlaced=false',
           ],
         },
-      ].filter(filter => !!filter),
+        node && {
+          test: /\.(css|scss|woff|ttf|eot|woff2|svg|ico|otf|webp|png|jpg|jpeg|gif)$/,
+          loader: 'raw',
+        },
+      ].filter(Boolean),
     },
-    devtool: watch ? 'eval-source-map' : 'source-map',
+    devtool: watch ? 'eval' : 'source-map',
     plugins: [
       new webpack.NoErrorsPlugin(),
       watch && new webpack.HotModuleReplacementPlugin(),
@@ -120,23 +133,43 @@ module.exports = (options) => {
         'process.env.NODE_ENV': JSON.stringify('development'),
       }),
       !watch && new webpack.optimize.OccurenceOrderPlugin(),
+      !watch && new webpack.optimize.DedupePlugin(),
       (!node && !watch) && new webpack.optimize.UglifyJsPlugin({
         compress: {
+          screw_ie8: true, // React doesn't support IE8
           warnings: false,
         },
+        mangle: {
+          screw_ie8: true,
+        },
+        output: {
+          comments: false,
+          screw_ie8: true,
+        },
       }),
-      (!node && !watch) && new ExtractTextPlugin(`${bundle}.css`),
+      (!node && !watch) && new ExtractTextPlugin(`css/${bundle}.css`),
       !watch && new webpack.DefinePlugin({
         'process.env.NODE_ENV': JSON.stringify('production'),
       }),
       (!node && watch && !proxy) && new HtmlWebpackPlugin({}),
-      node && new webpack.IgnorePlugin(/\.(css|scss)$/),
-      node && new webpack.BannerPlugin('require("source-map-support").install();', { raw: true, entryOnly: false }),
-
-    ].filter(filter => !!filter),
+      watch && new CaseSensitivePathsPlugin(),
+    ].filter(Boolean),
     node: {
       __dirname: false,
       __filename: false,
     },
+    cache: !!watch,
+    debug: !!watch,
+    bail: !watch,
+    postcss: (!watch && !node) && (() => ([
+      autoprefixer({
+        browsers: [
+          '>1%',
+          'last 4 versions',
+          'Firefox ESR',
+          'not ie < 9', // React doesn't support IE8 anyway
+        ],
+      }),
+    ])),
   };
 };
