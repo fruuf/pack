@@ -7,7 +7,7 @@ const path = require('path');
 
 
 commander
-  .version('0.1.6')
+  .version('0.1.7')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
@@ -50,7 +50,6 @@ if (commander.watch && !commander.node) {
       modules: false,
     },
     hot: true,
-    quiet: true,
     inline: true,
     historyApiFallback: !commander.proxy && { index: commander.assets },
     proxy: commander.proxy

@@ -39,7 +39,10 @@ module.exports = (options) => {
 
   const nodeModules = {};
   if (node) {
-    [ensureExists(path.join(__dirname, '../node_modules'))]
+    [
+      ensureExists(path.join(__dirname, '../node_modules')),
+      ensureExists(path.join(root, 'node_modules')),
+    ]
     .filter(Boolean)
     .concat(nodePaths)
     .forEach(nodeModulesPath => {
@@ -54,7 +57,7 @@ module.exports = (options) => {
   return {
     entry: [
       (node && watch) && `${require.resolve('webpack/hot/poll')}?1000`,
-      (!node && watch && react) && require.resolve('react-hot-loader/patch'),
+      (!node && watch) && require.resolve('react-hot-loader/patch'),
       (!node && watch) && `${require.resolve('webpack-dev-server/client')}?http://localhost:${port}/`,
       (!node && watch) && require.resolve('webpack/hot/dev-server'),
       (node && env) && path.join(__dirname, 'load-env'),
