@@ -6,10 +6,8 @@ const commander = require('commander');
 const path = require('path');
 
 
-let serverUpdateCount = 0;
-
 commander
-  .version('0.1.5')
+  .version('0.1.6')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)

@@ -17,13 +17,6 @@ const ensureExists = fn => {
   }
 };
 
-const nodeModules = {};
-fs.readdirSync('node_modules')
-  .filter((x) => ['.bin'].indexOf(x) === -1)
-  .forEach((mod) => {
-    nodeModules[mod] = `commonjs ${mod}`;
-  });
-
 const nodePaths = (process.env.NODE_PATH || '')
   .split(process.platform === 'win32' ? ';' : ':')
   .filter(Boolean)
@@ -43,12 +36,27 @@ module.exports = (options) => {
   const node = options.node;
   const proxy = !!options.proxy;
   const env = options.env;
+
+  const nodeModules = {};
+  if (node) {
+    [ensureExists(path.join(__dirname, '../node_modules'))]
+    .filter(Boolean)
+    .concat(nodePaths)
+    .forEach(nodeModulesPath => {
+      fs.readdirSync(nodeModulesPath)
+      .filter(x => ['.bin', '.cache'].indexOf(x) === -1)
+      .forEach(mod => {
+        nodeModules[mod] = `commonjs ${mod}`;
+      });
+    });
+  }
+
   return {
     entry: [
-      (node && watch) && 'webpack/hot/poll?1000',
-      (!node && watch && react) && 'react-hot-loader/patch',
-      (!node && watch) && `webpack-dev-server/client?http://localhost:${port}/`,
-      (!node && watch) && 'webpack/hot/dev-server',
+      (node && watch) && `${require.resolve('webpack/hot/poll')}?1000`,
+      (!node && watch && react) && require.resolve('react-hot-loader/patch'),
+      (!node && watch) && `${require.resolve('webpack-dev-server/client')}?http://localhost:${port}/`,
+      (!node && watch) && require.resolve('webpack/hot/dev-server'),
       (node && env) && path.join(__dirname, 'load-env'),
       (!node && !watch) && path.join(__dirname, 'polyfills'),
       (node || !react) && path.join(root, src, main),
@@ -68,6 +76,7 @@ module.exports = (options) => {
       extensions: ['', '.js', '.json'],
       fallback: [
         react && ensureExists(path.join(root, src, components)),
+        ensureExists(path.join(__dirname, '../node_modules')),
       ].filter(Boolean).concat(nodePaths),
       alias: {
         main: path.join(root, src, main),
@@ -78,50 +87,54 @@ module.exports = (options) => {
       loaders: [
         {
           test: /\.js$/,
-          loader: 'babel',
+          loader: require.resolve('babel-loader'),
           exclude: /node_modules/,
           query: {
             babelrc: false,
             cacheDirectory: watch && findCacheDir({ name: 'pack' }),
-            presets: ['airbnb'],
+            presets: [require.resolve('babel-preset-airbnb')],
             plugins: [
-              (react && watch && !node) && 'react-hot-loader/babel',
-              ['babel-root-slash-import', { rootPathSuffix: src }],
+              (react && watch && !node) && require.resolve('react-hot-loader/babel'),
+              [require.resolve('babel-root-slash-import'), { rootPathSuffix: src }],
             ].filter(Boolean),
           },
         },
         {
           test: /\.json$/,
-          loader: 'json',
+          loader: require.resolve('json-loader'),
         },
         !node && {
           test: /\.(woff|ttf|eot|woff2|svg|ico|otf|webp)$/,
-          loaders: ['url?limit=25000&name=media/[name].[hash:base64:6].[ext]'],
+          loaders: [`${require.resolve('url-loader')}?limit=25000&name=media/[name].[hash:base64:6].[ext]`],
         },
         (!node && watch) && {
           test: /(\.scss|\.css)$/,
-          loaders: ['style', 'css', 'sass'],
+          loaders: [require.resolve('style-loader'), require.resolve('css-loader'), require.resolve('sass-loader')],
         },
         (!node && watch) && {
           test: /\.(png|jpg|jpeg|gif)$/,
           loaders: [
-            'url?limit=25000&name=images/[name].[hash:base64:6].[ext]',
+            `${require.resolve('url-loader')}?limit=25000&name=images/[name].[hash:base64:6].[ext]`,
           ],
         },
         (!node && !watch) && {
           test: /(\.scss|\.css)$/,
-          loader: ExtractTextPlugin.extract('style', ['css?-autoprefixer', 'postcss', 'sass']),
+          loader: ExtractTextPlugin.extract(require.resolve('style-loader'), [
+            `${require.resolve('css-loader')}?-autoprefixer`,
+            require.resolve('postcss-loader'),
+            require.resolve('sass-loader'),
+          ]),
         },
         (!node && !watch) && {
           test: /\.(png|jpg|jpeg|gif)$/,
           loaders: [
-            'url?limit=25000&name=images/[name].[hash:base64:6].[ext]',
-            'image-webpack?optimizationLevel=7&interlaced=false',
+            `${require.resolve('url-loader')}?limit=25000&name=images/[name].[hash:base64:6].[ext]`,
+            `${require.resolve('image-webpack-loader')}?optimizationLevel=7&interlaced=false`,
           ],
         },
         node && {
           test: /\.(css|scss|woff|ttf|eot|woff2|svg|ico|otf|webp|png|jpg|jpeg|gif)$/,
-          loader: 'raw',
+          loader: require.resolve('raw-loader'),
         },
       ].filter(Boolean),
     },
