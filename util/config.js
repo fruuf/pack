@@ -72,7 +72,7 @@ module.exports = (options) => {
       (!node && watch) && `${require.resolve('webpack-dev-server/client')}?${hostname}`,
       (!node && watch) && require.resolve('webpack/hot/dev-server'),
       (node && env) && path.join(__dirname, 'load-env'),
-      (!node && !watch) && path.join(__dirname, 'polyfills'),
+      !node && path.join(__dirname, 'polyfills'),
       (node || !react) && path.join(root, src, main),
       (!node && react) && path.join(__dirname, 'react'),
     ].filter(Boolean),
