@@ -36,6 +36,7 @@ module.exports = (options) => {
   const node = options.node;
   const proxy = !!options.proxy;
   const env = options.env;
+  const lint = options.lint;
 
   const nodeModules = {};
   if (node) {
@@ -87,6 +88,13 @@ module.exports = (options) => {
     },
     watch: !!watch,
     module: {
+      preLoaders: [
+        lint && {
+          test: /\.js$/,
+          loader: require.resolve('eslint-loader'),
+          include: path.join(root, src),
+        },
+      ].filter(Boolean),
       loaders: [
         {
           test: /\.js$/,
@@ -106,9 +114,25 @@ module.exports = (options) => {
           test: /\.json$/,
           loader: require.resolve('json-loader'),
         },
+        {
+          test: /\.(pug|jade)$/,
+          loader: require.resolve('pug-loader'),
+        },
+        {
+          test: /\.(html)$/,
+          loader: require.resolve('raw-loader'),
+        },
         !node && {
-          test: /\.(woff|ttf|eot|woff2|svg|ico|otf|webp)$/,
+          test: /\.(svg|webp)$/,
+          loaders: [`${require.resolve('url-loader')}?limit=25000&name=images/[name].[hash:base64:6].[ext]`],
+        },
+        !node && {
+          test: /\.(ico|mp4|webm)$/,
           loaders: [`${require.resolve('url-loader')}?limit=25000&name=media/[name].[hash:base64:6].[ext]`],
+        },
+        !node && {
+          test: /\.(woff|ttf|eot|woff2|otf)$/,
+          loaders: [`${require.resolve('url-loader')}?limit=25000&name=fonts/[name].[hash:base64:6].[ext]`],
         },
         (!node && watch) && {
           test: /(\.scss|\.css)$/,
@@ -187,5 +211,9 @@ module.exports = (options) => {
         ],
       }),
     ])),
+    eslint: lint && {
+      configFile: require.resolve('eslint-config-airbnb'),
+      useEslintrc: false,
+    },
   };
 };
