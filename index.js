@@ -15,15 +15,15 @@ commander
   .option('-r, --react', 'enable react', false)
   .option('-e, --env', 'load .env file', false)
   .option('-m, --modules', 'enable css modules', false)
-  .option('-s --src [srcdir]', 'source directory [src]', 'src')
+  .option('-s, --src [srcdir]', 'source directory [src]', 'src')
   .option('-o, --output [directory]', 'output directory [dist]', 'dist')
-  .option('-a --assets [pubdir]', 'assets directory []', '')
+  .option('-a, --assets [pubdir]', 'assets directory []', '')
   .option('-p, --port [port]', 'port number [8080]', 8080)
-  .option('-t, --template [template]', 'html template [index.html]', 'index.html')
   .option('--bundle [bundle]', 'bundle name [bundle]', 'bundle')
   .option('--main [main]', 'main filename [main]', 'main')
   .option('--static [staticdir]', 'static folder for development server []', '')
   .option('--proxy [proxy]', 'proxy port or server []', '')
+  .option('--template [template]', 'html template [index.html]', 'index.html')
   .option('--components [compdir]', 'react component dir [components]', 'components')
   .parse(process.argv);
 

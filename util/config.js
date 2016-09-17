@@ -39,6 +39,7 @@ module.exports = (options) => {
   const lint = options.lint;
   const modules = options.modules;
   const template = options.template;
+  const hostname = (process.env.C9_HOSTNAME && `http://${process.env.C9_HOSTNAME}`) || `http://localhost:${port}/`;
 
   const nodeModules = {};
   if (node) {
@@ -68,7 +69,7 @@ module.exports = (options) => {
     entry: [
       (node && watch) && `${require.resolve('webpack/hot/poll')}?1000`,
       (!node && watch) && require.resolve('react-hot-loader/patch'),
-      (!node && watch) && `${require.resolve('webpack-dev-server/client')}?http://localhost:${port}/`,
+      (!node && watch) && `${require.resolve('webpack-dev-server/client')}?${hostname}`,
       (!node && watch) && require.resolve('webpack/hot/dev-server'),
       (node && env) && path.join(__dirname, 'load-env'),
       (!node && !watch) && path.join(__dirname, 'polyfills'),
