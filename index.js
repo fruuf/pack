@@ -19,6 +19,7 @@ commander
   .option('-o, --output [directory]', 'output directory [dist]', 'dist')
   .option('-a --assets [pubdir]', 'assets directory []', '')
   .option('-p, --port [port]', 'port number [8080]', 8080)
+  .option('-t, --template [template]', 'html template [index.html]', 'index.html')
   .option('--bundle [bundle]', 'bundle name [bundle]', 'bundle')
   .option('--main [main]', 'main filename [main]', 'main')
   .option('--static [staticdir]', 'static folder for development server []', '')

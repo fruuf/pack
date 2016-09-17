@@ -38,6 +38,7 @@ module.exports = (options) => {
   const env = options.env;
   const lint = options.lint;
   const modules = options.modules;
+  const template = options.template;
 
   const nodeModules = {};
   if (node) {
@@ -55,6 +56,13 @@ module.exports = (options) => {
       });
     });
   }
+
+  const templateOptions = ensureExists(path.join(root, src, template))
+    ? {
+      template: path.join(root, src, template),
+      inject: true,
+    }
+    : {};
 
   return {
     entry: [
@@ -196,7 +204,7 @@ module.exports = (options) => {
       !watch && new webpack.DefinePlugin({
         'process.env.NODE_ENV': JSON.stringify('production'),
       }),
-      (!node && watch && !proxy) && new HtmlWebpackPlugin({}),
+      (!node && (watch || templateOptions.template) && !proxy) && new HtmlWebpackPlugin(templateOptions),
       watch && new CaseSensitivePathsPlugin(),
     ].filter(Boolean),
     node: {
