@@ -37,6 +37,7 @@ module.exports = (options) => {
   const proxy = !!options.proxy;
   const env = options.env;
   const lint = options.lint;
+  const modules = options.modules;
 
   const nodeModules = {};
   if (node) {
@@ -114,50 +115,54 @@ module.exports = (options) => {
           test: /\.json$/,
           loader: require.resolve('json-loader'),
         },
-        {
-          test: /\.(pug|jade)$/,
-          loader: require.resolve('pug-loader'),
+        (!node && watch) && {
+          test: /(\.scss|\.css)$/,
+          loaders: [
+            require.resolve('style-loader'),
+            // eslint-disable-next-line max-len
+            `${require.resolve('css-loader')}${modules ? '?modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]' : ''}`,
+            require.resolve('sass-loader')],
+        },
+        (!node && !watch) && {
+          test: /(\.scss|\.css)$/,
+          loader: ExtractTextPlugin.extract(require.resolve('style-loader'), [
+            `${require.resolve('css-loader')}?-autoprefixer${modules ? '&modules' : ''}`,
+            require.resolve('postcss-loader'),
+            require.resolve('sass-loader'),
+          ]),
+        },
+        (!node && watch) && {
+          test: /\.(png|jpg|jpeg|gif|svg)$/,
+          loaders: [
+            `${require.resolve('url-loader')}?limit=25000&name=images/[name].[hash:base64:6].[ext]`,
+          ],
+        },
+        (!node && !watch) && {
+          test: /\.(png|jpg|jpeg|gif|svg)$/,
+          loaders: [
+            `${require.resolve('url-loader')}?limit=25000&name=images/[name].[hash:base64:6].[ext]`,
+            `${require.resolve('image-webpack-loader')}?optimizationLevel=7&interlaced=false`,
+          ],
+        },
+        !node && {
+          test: /\.(webp)$/,
+          loaders: [`${require.resolve('url-loader')}?limit=25000&name=images/[name].[hash:base64:6].[ext]`],
         },
         {
           test: /\.(html)$/,
           loader: require.resolve('raw-loader'),
         },
-        !node && {
-          test: /\.(svg|webp)$/,
-          loaders: [`${require.resolve('url-loader')}?limit=25000&name=images/[name].[hash:base64:6].[ext]`],
-        },
-        !node && {
-          test: /\.(ico|mp4|webm)$/,
-          loaders: [`${require.resolve('url-loader')}?limit=25000&name=media/[name].[hash:base64:6].[ext]`],
+        {
+          test: /\.(pug|jade)$/,
+          loader: require.resolve('pug-loader'),
         },
         !node && {
           test: /\.(woff|ttf|eot|woff2|otf)$/,
           loaders: [`${require.resolve('url-loader')}?limit=25000&name=fonts/[name].[hash:base64:6].[ext]`],
         },
-        (!node && watch) && {
-          test: /(\.scss|\.css)$/,
-          loaders: [require.resolve('style-loader'), require.resolve('css-loader'), require.resolve('sass-loader')],
-        },
-        (!node && watch) && {
-          test: /\.(png|jpg|jpeg|gif)$/,
-          loaders: [
-            `${require.resolve('url-loader')}?limit=25000&name=images/[name].[hash:base64:6].[ext]`,
-          ],
-        },
-        (!node && !watch) && {
-          test: /(\.scss|\.css)$/,
-          loader: ExtractTextPlugin.extract(require.resolve('style-loader'), [
-            `${require.resolve('css-loader')}?-autoprefixer`,
-            require.resolve('postcss-loader'),
-            require.resolve('sass-loader'),
-          ]),
-        },
-        (!node && !watch) && {
-          test: /\.(png|jpg|jpeg|gif)$/,
-          loaders: [
-            `${require.resolve('url-loader')}?limit=25000&name=images/[name].[hash:base64:6].[ext]`,
-            `${require.resolve('image-webpack-loader')}?optimizationLevel=7&interlaced=false`,
-          ],
+        !node && {
+          test: /\.(ico|mp4|webm)$/,
+          loaders: [`${require.resolve('url-loader')}?limit=25000&name=media/[name].[hash:base64:6].[ext]`],
         },
         node && {
           test: /\.(css|scss|woff|ttf|eot|woff2|svg|ico|otf|webp|png|jpg|jpeg|gif)$/,
@@ -176,7 +181,7 @@ module.exports = (options) => {
       !watch && new webpack.optimize.DedupePlugin(),
       (!node && !watch) && new webpack.optimize.UglifyJsPlugin({
         compress: {
-          screw_ie8: true, // React doesn't support IE8
+          screw_ie8: true,
           warnings: false,
         },
         mangle: {

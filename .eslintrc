@@ -15,7 +15,6 @@
   },
   "rules": {
     "import/no-unresolved": 0,
-    // Extend max line length to 120 chars
     "max-len": ["error", { "code": 120 }],
   },
   "globals": {}

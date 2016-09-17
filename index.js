@@ -14,6 +14,7 @@ commander
   .option('-l, --lint', 'enable linter', false)
   .option('-r, --react', 'enable react', false)
   .option('-e, --env', 'load .env file', false)
+  .option('-m, --modules', 'enable css modules', false)
   .option('-s --src [srcdir]', 'source directory [src]', 'src')
   .option('-o, --output [directory]', 'output directory [dist]', 'dist')
   .option('-a --assets [pubdir]', 'assets directory []', '')
