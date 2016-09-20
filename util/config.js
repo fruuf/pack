@@ -157,7 +157,7 @@ module.exports = (options) => {
           test: /\.(webp)$/,
           loaders: [`${require.resolve('url-loader')}?limit=25000&name=images/[name].[hash:base64:6].[ext]`],
         },
-        {
+        !node && {
           test: /\.(html)$/,
           loader: require.resolve('raw-loader'),
         },
@@ -174,7 +174,7 @@ module.exports = (options) => {
           loaders: [`${require.resolve('url-loader')}?limit=25000&name=media/[name].[hash:base64:6].[ext]`],
         },
         node && {
-          test: /\.(css|scss|woff|ttf|eot|woff2|svg|ico|otf|webp|png|jpg|jpeg|gif)$/,
+          test: /\.(css|scss|woff|ttf|eot|woff2|svg|ico|otf|webp|png|jpg|jpeg|gif|html|mp4|webm)$/,
           loader: require.resolve('raw-loader'),
         },
       ].filter(Boolean),
