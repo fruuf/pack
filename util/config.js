@@ -22,6 +22,15 @@ const nodePaths = (process.env.NODE_PATH || '')
   .filter(Boolean)
   .map(p => path.resolve(p));
 
+const resolve = (loader, queryParts = []) => {
+  const loaderPath = require.resolve(loader);
+  const query = queryParts
+    .filter(Boolean)
+    .join('&');
+  return `${loaderPath}${query ? `?${query}` : ''}`;
+};
+
+
 module.exports = (options) => {
   const root = options.root;
   const output = options.output;
@@ -40,6 +49,7 @@ module.exports = (options) => {
   const modules = options.modules;
   const template = options.template;
   const hostname = (process.env.C9_HOSTNAME && `http://${process.env.C9_HOSTNAME}`) || `http://localhost:${port}/`;
+  const saveRootPath = encodeURIComponent(path.join(root, src));
 
   const nodeModules = {};
   if (node) {
@@ -67,10 +77,10 @@ module.exports = (options) => {
 
   return {
     entry: [
-      (node && watch) && `${require.resolve('webpack/hot/poll')}?1000`,
-      (!node && watch) && require.resolve('react-hot-loader/patch'),
-      (!node && watch) && `${require.resolve('webpack-dev-server/client')}?${hostname}`,
-      (!node && watch) && require.resolve('webpack/hot/dev-server'),
+      (node && watch) && resolve('webpack/hot/poll', ['1000']),
+      (!node && watch) && resolve('react-hot-loader/patch'),
+      (!node && watch) && resolve('webpack-dev-server/client', [hostname]),
+      (!node && watch) && resolve('webpack/hot/dev-server'),
       (node && env) && path.join(__dirname, 'load-env'),
       !node && path.join(__dirname, 'polyfills'),
       (node || !react) && path.join(root, src, main),
@@ -100,86 +110,133 @@ module.exports = (options) => {
     module: {
       preLoaders: [
         lint && {
-          test: /\.js$/,
-          loader: require.resolve('eslint-loader'),
+          test: /\.js($|\?)/,
+          loader: resolve('eslint-loader'),
           include: path.join(root, src),
+        },
+        !node && {
+          test: /\.scss($|\?)/,
+          loader: resolve('sass-loader', [`root=${saveRootPath}`]),
+        },
+        !node && {
+          test: /\.less($|\?)/,
+          loader: resolve('less-loader', [`root=${saveRootPath}`]),
         },
       ].filter(Boolean),
       loaders: [
         {
-          test: /\.js$/,
-          loader: require.resolve('babel-loader'),
+          test: /\.js($|\?)/,
+          loader: resolve('babel-loader'),
           exclude: /node_modules/,
           query: {
             babelrc: false,
             cacheDirectory: watch && findCacheDir({ name: 'pack' }),
-            presets: [require.resolve('babel-preset-airbnb')],
+            presets: [resolve('babel-preset-airbnb')],
             plugins: [
-              (react && watch && !node) && require.resolve('react-hot-loader/babel'),
-              [require.resolve('babel-root-slash-import'), { rootPathSuffix: src }],
+              (react && watch && !node) && resolve('react-hot-loader/babel'),
+              [resolve('babel-root-slash-import'), { rootPathSuffix: src }],
             ].filter(Boolean),
           },
         },
         {
-          test: /\.json$/,
-          loader: require.resolve('json-loader'),
+          test: /\.json($|\?)/,
+          loader: resolve('json-loader'),
         },
         (!node && watch) && {
-          test: /(\.scss|\.css)$/,
+          test: /\.(scss|less|css)($|\?(?!global))/,
           loaders: [
-            require.resolve('style-loader'),
-            // eslint-disable-next-line max-len
-            `${require.resolve('css-loader')}${modules ? '?modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]' : ''}`,
-            require.resolve('sass-loader')],
+            resolve('style-loader'),
+            resolve('css-loader', [
+              modules && 'modules',
+              modules && 'localIdentName=[name]__[local]___[hash:base64:5]',
+              `root=${saveRootPath}`,
+              'importLoaders=1',
+            ]),
+          ],
         },
         (!node && !watch) && {
-          test: /(\.scss|\.css)$/,
-          loader: ExtractTextPlugin.extract(require.resolve('style-loader'), [
-            `${require.resolve('css-loader')}?-autoprefixer${modules ? '&modules' : ''}`,
-            require.resolve('postcss-loader'),
-            require.resolve('sass-loader'),
+          test: /\.(scss|less|css)($|\?(?!global))/,
+          loader: ExtractTextPlugin.extract(resolve('style-loader'), [
+            resolve('css-loader', [
+              '-autoprefixer',
+              `root=${saveRootPath}`,
+              'importLoaders=1',
+              modules && 'modules',
+            ]),
+            resolve('postcss-loader'),
+          ]),
+        },
+        // allow global modules
+        (!node && !watch) && {
+          test: /\.(scss|less|css)\?global$/,
+          loader: ExtractTextPlugin.extract(resolve('style-loader'), [
+            resolve('css-loader', [
+              '-autoprefixer',
+              `root=${saveRootPath}`,
+              'importLoaders=1',
+            ]),
+            resolve('postcss-loader'),
           ]),
         },
         (!node && watch) && {
-          test: /\.(png|jpg|jpeg|gif|svg)$/,
+          test: /\.(scss|less|css)\?global$/,
           loaders: [
-            `${require.resolve('url-loader')}?limit=25000&name=images/[name].[hash:base64:6].[ext]`,
+            resolve('style-loader'),
+            resolve('css-loader', [
+              `root=${saveRootPath}`,
+              'importLoaders=1',
+            ]),
+          ],
+        },
+
+        (!node && watch) && {
+          test: /\.(png|jpg|jpeg|gif|svg)($|\?)/,
+          loaders: [
+            resolve('url-loader', [
+              'limit=25000',
+              'name=images/[name].[hash:base64:6].[ext]',
+              `root=${saveRootPath}`,
+            ]),
           ],
         },
         (!node && !watch) && {
-          test: /\.(png|jpg|jpeg|gif|svg)$/,
+          test: /\.(png|jpg|jpeg|gif|svg)($|\?)/,
           loaders: [
-            `${require.resolve('url-loader')}?limit=25000&name=images/[name].[hash:base64:6].[ext]`,
-            `${require.resolve('image-webpack-loader')}?optimizationLevel=7&interlaced=false`,
+            resolve('url-loader', [
+              'limit=25000',
+              'name=images/[name].[hash:base64:6].[ext]',
+              `root=${saveRootPath}`,
+            ]),
+            resolve('image-webpack-loader', ['optimizationLevel=7', 'interlaced=false']),
           ],
         },
         !node && {
-          test: /\.(webp)$/,
-          loaders: [`${require.resolve('url-loader')}?limit=25000&name=images/[name].[hash:base64:6].[ext]`],
+          test: /\.(webp)($|\?)/,
+          loaders: [resolve('url-loader', ['limit=25000', 'name=images/[name].[hash:base64:6].[ext]'])],
         },
         !node && {
-          test: /\.(html)$/,
-          loader: require.resolve('raw-loader'),
+          test: /\.(html)($|\?)/,
+          loader: resolve('raw-loader'),
         },
         {
-          test: /\.(pug|jade)$/,
-          loader: require.resolve('pug-loader'),
+          test: /\.(pug|jade)($|\?)/,
+          loader: resolve('pug-loader', [`root=${saveRootPath}`]),
         },
         !node && {
-          test: /\.(woff|ttf|eot|woff2|otf)$/,
-          loaders: [`${require.resolve('url-loader')}?limit=25000&name=fonts/[name].[hash:base64:6].[ext]`],
+          test: /\.(woff|ttf|eot|woff2|otf)($|\?)/,
+          loaders: [resolve('url-loader', ['limit=25000', 'name=fonts/[name].[hash:base64:6].[ext]'])],
         },
         !node && {
-          test: /\.(ico|mp4|webm)$/,
-          loaders: [`${require.resolve('url-loader')}?limit=25000&name=media/[name].[hash:base64:6].[ext]`],
+          test: /\.(ico|mp4|webm)($|\?)/,
+          loaders: [resolve('url-loader', ['limit=25000', 'name=media/[name].[hash:base64:6].[ext]'])],
         },
         node && {
-          test: /\.(css|scss|woff|ttf|eot|woff2|svg|ico|otf|webp|png|jpg|jpeg|gif|html|mp4|webm)$/,
-          loader: require.resolve('raw-loader'),
+          test: /\.(css|scss|less|woff|ttf|eot|woff2|svg|ico|otf|webp|png|jpg|jpeg|gif|html|mp4|webm)($|\?)/,
+          loader: resolve('raw-loader'),
         },
       ].filter(Boolean),
     },
-    devtool: watch ? 'eval' : 'source-map',
+    devtool: watch && (node && 'eval' || 'eval') || 'source-map',
     plugins: [
       new webpack.NoErrorsPlugin(),
       watch && new webpack.HotModuleReplacementPlugin(),
@@ -212,7 +269,7 @@ module.exports = (options) => {
       __dirname: false,
       __filename: false,
     },
-    cache: !!watch,
+    cache: true,
     debug: !!watch,
     bail: !watch,
     postcss: (!watch && !node) && (() => ([
@@ -226,7 +283,7 @@ module.exports = (options) => {
       }),
     ])),
     eslint: lint && {
-      configFile: require.resolve('eslint-config-airbnb'),
+      configFile: resolve('eslint-config-airbnb'),
       useEslintrc: false,
     },
   };
