@@ -22,7 +22,8 @@ const nodePaths = (process.env.NODE_PATH || '')
   .filter(Boolean)
   .map(p => path.resolve(p));
 
-const resolve = (loader, queryParts = []) => {
+const resolve = (loader, queryParts) => {
+  if (!queryParts) queryParts = [];
   const loaderPath = require.resolve(loader);
   const query = queryParts
     .filter(Boolean)
@@ -97,14 +98,20 @@ module.exports = (options) => {
     externals: node ? nodeModules : {},
     context: root,
     resolve: {
-      extensions: ['', '.js', '.json'],
+      extensions: ['', '.js', '.json', '.coffee'],
       fallback: [
         react && ensureExists(path.join(root, src, components)),
         ensureExists(path.join(__dirname, '../node_modules')),
       ].filter(Boolean).concat(nodePaths),
-      alias: {
-        main: path.join(root, src, main),
-      },
+      alias: [
+        { main: path.join(root, src, main) },
+        (!watch && !node) && {
+          react: require.resolve('react-lite'),
+          'react-dom': require.resolve('react-lite'),
+        },
+      ]
+      .filter(Boolean)
+      .reduce((map, current) => Object.assign(map, current), {}),
     },
     watch: !!watch,
     module: {
@@ -142,6 +149,10 @@ module.exports = (options) => {
           test: /\.json($|\?)/,
           loader: resolve('json-loader'),
         },
+        {
+          test: /\.coffee($|\?)/,
+          loader: resolve('coffee-loader'),
+        },
         (!node && watch) && {
           test: /\.(scss|less|css)($|\?(?!global))/,
           loaders: [
@@ -151,7 +162,9 @@ module.exports = (options) => {
               modules && 'localIdentName=[name]__[local]___[hash:base64:5]',
               `root=${saveRootPath}`,
               'importLoaders=1',
+              '-autoprefixer',
             ]),
+            resolve('postcss-loader'),
           ],
         },
         (!node && !watch) && {
@@ -185,7 +198,9 @@ module.exports = (options) => {
             resolve('css-loader', [
               `root=${saveRootPath}`,
               'importLoaders=1',
+              '-autoprefixer',
             ]),
+            resolve('postcss-loader'),
           ],
         },
 
@@ -272,7 +287,7 @@ module.exports = (options) => {
     cache: true,
     debug: !!watch,
     bail: !watch,
-    postcss: (!watch && !node) && (() => ([
+    postcss: !node && (() => ([
       autoprefixer({
         browsers: [
           '>1%',

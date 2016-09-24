@@ -7,7 +7,7 @@ const path = require('path');
 
 
 commander
-  .version('0.2.1')
+  .version('0.2.2')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
