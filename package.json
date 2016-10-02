@@ -1,6 +1,6 @@
 {
   "name": "pack-cli",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "pack cli",
   "bin": {
     "pack": ".bin/pack"
@@ -44,6 +44,7 @@
     "html-webpack-plugin": "^2.22.0",
     "image-webpack-loader": "^2.0.0",
     "json-loader": "^0.5.4",
+    "jsonfile": "^2.4.0",
     "less": "^2.7.1",
     "less-loader": "^2.2.3",
     "node-sass": "^3.8.0",

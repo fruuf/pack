@@ -95,13 +95,14 @@ module.exports = (options) => {
       pathinfo: !!watch,
     },
     target: node ? 'node' : 'web',
-    externals: node ? nodeModules : {},
+    externals: node ? nodeModules : (options.externals || {}),
     context: root,
     resolve: {
       extensions: ['', '.js', '.json', '.coffee'],
       fallback: [
         react && ensureExists(path.join(root, src, components)),
         ensureExists(path.join(__dirname, '../node_modules')),
+        ensureExists(path.join(__dirname, '../../node_modules')),
       ].filter(Boolean).concat(nodePaths),
       alias: [
         { main: path.join(root, src, main) },
@@ -203,31 +204,20 @@ module.exports = (options) => {
             resolve('postcss-loader'),
           ],
         },
-
-        (!node && watch) && {
+        !node && {
           test: /\.(png|jpg|jpeg|gif|svg)($|\?)/,
           loaders: [
             resolve('url-loader', [
-              'limit=25000',
+              'limit=5000',
               'name=images/[name].[hash:base64:6].[ext]',
               `root=${saveRootPath}`,
             ]),
-          ],
-        },
-        (!node && !watch) && {
-          test: /\.(png|jpg|jpeg|gif|svg)($|\?)/,
-          loaders: [
-            resolve('url-loader', [
-              'limit=25000',
-              'name=images/[name].[hash:base64:6].[ext]',
-              `root=${saveRootPath}`,
-            ]),
-            resolve('image-webpack-loader', ['optimizationLevel=7', 'interlaced=false']),
-          ],
+            !watch && resolve('image-webpack-loader', ['optimizationLevel=7', 'interlaced=false']),
+          ].filter(Boolean),
         },
         !node && {
           test: /\.(webp)($|\?)/,
-          loaders: [resolve('url-loader', ['limit=25000', 'name=images/[name].[hash:base64:6].[ext]'])],
+          loaders: [resolve('url-loader', ['limit=5000', 'name=images/[name].[hash:base64:6].[ext]'])],
         },
         !node && {
           test: /\.(html)($|\?)/,
@@ -235,20 +225,27 @@ module.exports = (options) => {
         },
         {
           test: /\.(pug|jade)($|\?)/,
-          loader: resolve('pug-loader', [`root=${saveRootPath}`]),
+          loader: resolve('pug-loader', [`root=${saveRootPath}`, `basedir=${saveRootPath}`]),
         },
         !node && {
           test: /\.(woff|ttf|eot|woff2|otf)($|\?)/,
-          loaders: [resolve('url-loader', ['limit=25000', 'name=fonts/[name].[hash:base64:6].[ext]'])],
+          loaders: [resolve('url-loader', ['limit=5000', 'name=fonts/[name].[hash:base64:6].[ext]'])],
         },
         !node && {
           test: /\.(ico|mp4|webm)($|\?)/,
-          loaders: [resolve('url-loader', ['limit=25000', 'name=media/[name].[hash:base64:6].[ext]'])],
+          loaders: [resolve('url-loader', ['limit=5000', 'name=media/[name].[hash:base64:6].[ext]'])],
         },
         node && {
           test: /\.(css|scss|less|woff|ttf|eot|woff2|svg|ico|otf|webp|png|jpg|jpeg|gif|html|mp4|webm)($|\?)/,
           loader: resolve('raw-loader'),
         },
+      ].filter(Boolean),
+    },
+    resolveLoader: {
+      fallback: [
+        react && ensureExists(path.join(root, src, components)),
+        ensureExists(path.join(__dirname, '../node_modules')),
+        ensureExists(path.join(__dirname, '../../node_modules')),
       ].filter(Boolean),
     },
     devtool: watch && (node && 'eval' || 'eval') || 'source-map',

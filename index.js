@@ -4,10 +4,11 @@ const validate = require('webpack-validator');
 const getConfig = require('./util/config');
 const commander = require('commander');
 const path = require('path');
+const jsonfile = require('jsonfile');
 
 
 commander
-  .version('0.2.2')
+  .version('0.2.3')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
@@ -27,18 +28,26 @@ commander
   .option('--components [compdir]', 'react component dir [components]', 'components')
   .parse(process.argv);
 
+var fileConfig = {};
+try {
+  fileConfig = jsonfile.readFileSync(path.join(process.cwd(), commander.src, '.packrc'));
+} catch (e1) {
+  try {
+    fileConfig = jsonfile.readFileSync(path.join(process.cwd(), '.packrc'));
+  } catch (e2) {}
+}
+
 const normaliseAssets = assets => {
   const cleanUrl = path.normalize(String(assets));
   if (cleanUrl === '.') return '/';
   return `${cleanUrl[0] === '/' ? '' : '/'}${cleanUrl}/`;
 };
 
-commander.assets = normaliseAssets(commander.assets);
-
-const options = {
+const options = Object.assign({}, commander, fileConfig, {
   root: process.cwd(),
-};
-const rawConfig = getConfig(Object.assign({}, commander, options));
+});
+options.assets = normaliseAssets(options.assets);
+const rawConfig = getConfig(options);
 const config = validate(rawConfig);
 
 if (commander.watch && !commander.node) {
