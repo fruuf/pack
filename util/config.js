@@ -55,7 +55,7 @@ module.exports = (options) => {
   const nodeModules = {};
   if (node) {
     [
-      ensureExists(path.join(__dirname, '../node_modules')),
+      ensureExists(path.join(__dirname, '../../node_modules')),
       ensureExists(path.join(root, 'node_modules')),
     ]
     .filter(Boolean)
@@ -68,7 +68,6 @@ module.exports = (options) => {
       });
     });
   }
-
   const templateOptions = ensureExists(path.join(root, src, template))
     ? {
       template: path.join(root, src, template),

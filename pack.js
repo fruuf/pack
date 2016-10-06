@@ -6,9 +6,8 @@ const commander = require('commander');
 const path = require('path');
 const jsonfile = require('jsonfile');
 
-
 commander
-  .version('0.2.3')
+  .version('0.2.5')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
