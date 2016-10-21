@@ -49,12 +49,11 @@ enables component hot reload while preserving state. if a directory `src/compone
       - main.js
 
 # options
-    .version('0.1.3')
+    .version('0.2.7')
     .description('pack a bundle')
     .option('-n, --node', 'enable node mode', false)
     .option('-w, --watch', 'enable watch mode', false)
     .option('-r, --react', 'enable react', false)
-    .option('-e, --env', 'load .env file', false)
     .option('-s --src [srcdir]', 'source directory [src]', 'src')
     .option('-o, --output [directory]', 'output directory [dist]', 'dist')
     .option('-a --assets [pubdir]', 'assets directory []', '')

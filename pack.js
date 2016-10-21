@@ -5,15 +5,15 @@ const getConfig = require('./util/config');
 const commander = require('commander');
 const path = require('path');
 const jsonfile = require('jsonfile');
+var fileConfig = {}; // eslint-disable-line no-var
 
 commander
-  .version('0.2.5')
+  .version('0.2.7')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
   .option('-l, --lint', 'enable linter', false)
   .option('-r, --react', 'enable react', false)
-  .option('-e, --env', 'load .env file', false)
   .option('-m, --modules', 'enable css modules', false)
   .option('-s, --src [srcdir]', 'source directory [src]', 'src')
   .option('-o, --output [directory]', 'output directory [dist]', 'dist')
@@ -27,13 +27,14 @@ commander
   .option('--components [compdir]', 'react component dir [components]', 'components')
   .parse(process.argv);
 
-var fileConfig = {};
 try {
   fileConfig = jsonfile.readFileSync(path.join(process.cwd(), commander.src, '.packrc'));
 } catch (e1) {
   try {
     fileConfig = jsonfile.readFileSync(path.join(process.cwd(), '.packrc'));
-  } catch (e2) {}
+  } catch (e2) {
+    // no pack rc
+  }
 }
 
 const normaliseAssets = assets => {
@@ -72,7 +73,7 @@ if (commander.watch && !commander.node) {
       : {},
     contentBase: (commander.static && !commander.proxy) && path.join(process.cwd(), commander.static),
   });
-  server.listen(commander.port);
+  server.listen(commander.port, '0.0.0.0');
   console.log(`http://localhost:${commander.port}`);
 } else {
   webpack(config, (directError, stats) => {

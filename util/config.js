@@ -45,7 +45,6 @@ module.exports = (options) => {
   const main = options.main;
   const node = options.node;
   const proxy = !!options.proxy;
-  const env = options.env;
   const lint = options.lint;
   const modules = options.modules;
   const template = options.template;
@@ -75,13 +74,28 @@ module.exports = (options) => {
     }
     : {};
 
+  const createStyleLoaders = (watch, modules, head) => {
+    const innerStack = [
+      resolve('css-loader', [
+        modules && 'modules',
+        (modules && watch) && 'localIdentName=[name]__[local]___[hash:base64:5]',
+        '-autoprefixer',
+        `root=${saveRootPath}`,
+        'importLoaders=1',
+      ]),
+      resolve('postcss-loader'),
+      head,
+    ].filter(Boolean);
+    if(watch) return [resolve('style-loader')].concat(innerStack);
+    return [ExtractTextPlugin.extract(resolve('style-loader'), innerStack)];
+  }
+
   return {
     entry: [
       (node && watch) && resolve('webpack/hot/poll', ['1000']),
       (!node && watch) && resolve('react-hot-loader/patch'),
       (!node && watch) && resolve('webpack-dev-server/client', [hostname]),
       (!node && watch) && resolve('webpack/hot/dev-server'),
-      (node && env) && path.join(__dirname, 'load-env'),
       !node && path.join(__dirname, 'polyfills'),
       (node || !react) && path.join(root, src, main),
       (!node && react) && path.join(__dirname, 'react'),
@@ -121,14 +135,6 @@ module.exports = (options) => {
           loader: resolve('eslint-loader'),
           include: path.join(root, src),
         },
-        !node && {
-          test: /\.scss($|\?)/,
-          loader: resolve('sass-loader', [`root=${saveRootPath}`]),
-        },
-        !node && {
-          test: /\.less($|\?)/,
-          loader: resolve('less-loader', [`root=${saveRootPath}`]),
-        },
       ].filter(Boolean),
       loaders: [
         {
@@ -153,55 +159,29 @@ module.exports = (options) => {
           test: /\.coffee($|\?)/,
           loader: resolve('coffee-loader'),
         },
-        (!node && watch) && {
-          test: /\.(scss|less|css)($|\?(?!global))/,
-          loaders: [
-            resolve('style-loader'),
-            resolve('css-loader', [
-              modules && 'modules',
-              modules && 'localIdentName=[name]__[local]___[hash:base64:5]',
-              `root=${saveRootPath}`,
-              'importLoaders=1',
-              '-autoprefixer',
-            ]),
-            resolve('postcss-loader'),
-          ],
+        !node && {
+          test: /\.css($|\?(?!global))/,
+          loaders: createStyleLoaders(watch, modules),
         },
-        (!node && !watch) && {
-          test: /\.(scss|less|css)($|\?(?!global))/,
-          loader: ExtractTextPlugin.extract(resolve('style-loader'), [
-            resolve('css-loader', [
-              '-autoprefixer',
-              `root=${saveRootPath}`,
-              'importLoaders=1',
-              modules && 'modules',
-            ]),
-            resolve('postcss-loader'),
-          ]),
+        !node && {
+          test: /\.css\?global$/,
+          loaders: createStyleLoaders(watch, false),
         },
-        // allow global modules
-        (!node && !watch) && {
-          test: /\.(scss|less|css)\?global$/,
-          loader: ExtractTextPlugin.extract(resolve('style-loader'), [
-            resolve('css-loader', [
-              '-autoprefixer',
-              `root=${saveRootPath}`,
-              'importLoaders=1',
-            ]),
-            resolve('postcss-loader'),
-          ]),
+        !node && {
+          test: /\.less($|\?(?!global))/,
+          loaders: createStyleLoaders(watch, modules, resolve('less-loader', [`root=${saveRootPath}`])),
         },
-        (!node && watch) && {
-          test: /\.(scss|less|css)\?global$/,
-          loaders: [
-            resolve('style-loader'),
-            resolve('css-loader', [
-              `root=${saveRootPath}`,
-              'importLoaders=1',
-              '-autoprefixer',
-            ]),
-            resolve('postcss-loader'),
-          ],
+        !node && {
+          test: /\.less\?global$/,
+          loaders: createStyleLoaders(watch, false, resolve('less-loader', [`root=${saveRootPath}`])),
+        },
+        !node && {
+          test: /\.scss($|\?(?!global))/,
+          loaders: createStyleLoaders(watch, modules, resolve('sass-loader', [`root=${saveRootPath}`])),
+        },
+        !node && {
+          test: /\.scss\?global$/,
+          loaders: createStyleLoaders(watch, false, resolve('sass-loader', [`root=${saveRootPath}`])),
         },
         !node && {
           test: /\.(png|jpg|jpeg|gif|svg)($|\?)/,
