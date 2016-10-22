@@ -8,7 +8,7 @@ const jsonfile = require('jsonfile');
 var fileConfig = {}; // eslint-disable-line no-var
 
 commander
-  .version('0.2.7')
+  .version('0.2.8')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
@@ -37,7 +37,7 @@ try {
   }
 }
 
-const normaliseAssets = assets => {
+const normaliseAssets = (assets) => {
   const cleanUrl = path.normalize(String(assets));
   if (cleanUrl === '.') return '/';
   return `${cleanUrl[0] === '/' ? '' : '/'}${cleanUrl}/`;
@@ -50,7 +50,7 @@ options.assets = normaliseAssets(options.assets);
 const rawConfig = getConfig(options);
 const config = validate(rawConfig);
 
-if (commander.watch && !commander.node) {
+if (options.watch && !options.node) {
   const compiler = webpack(config);
   const server = new WebpackDevServer(compiler, {
     publicPath: config.output.publicPath,
@@ -64,17 +64,17 @@ if (commander.watch && !commander.node) {
     },
     hot: true,
     inline: true,
-    historyApiFallback: !commander.proxy && { index: commander.assets },
-    proxy: commander.proxy
-      ? { '**': String(commander.proxy).match(/^\d+$/)
-        ? `http://localhost:${commander.proxy}`
-        : String(commander.proxy),
+    historyApiFallback: !options.proxy && { index: options.assets },
+    proxy: options.proxy
+      ? { '**': String(options.proxy).match(/^\d+$/)
+        ? `http://localhost:${options.proxy}`
+        : String(options.proxy),
       }
       : {},
-    contentBase: (commander.static && !commander.proxy) && path.join(process.cwd(), commander.static),
+    contentBase: (options.static && !options.proxy) && path.join(process.cwd(), options.static),
   });
-  server.listen(commander.port, '0.0.0.0');
-  console.log(`http://localhost:${commander.port}`);
+  server.listen(options.port, '0.0.0.0');
+  console.log(`http://localhost:${options.port}`);
 } else {
   webpack(config, (directError, stats) => {
     if (directError) throw new Error(directError);

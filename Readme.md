@@ -49,7 +49,7 @@ enables component hot reload while preserving state. if a directory `src/compone
       - main.js
 
 # options
-    .version('0.2.7')
+    .version('0.2.8')
     .description('pack a bundle')
     .option('-n, --node', 'enable node mode', false)
     .option('-w, --watch', 'enable watch mode', false)
@@ -60,6 +60,5 @@ enables component hot reload while preserving state. if a directory `src/compone
     .option('-p, --port [port]', 'port number [8080]', 8080)
     .option('--bundle [bundle]', 'bundle name [bundle]', 'bundle')
     .option('--main [main]', 'main filename [main]', 'main')
-    .option('--static [staticdir]', 'static folder for development server []', '')
     .option('--proxy [proxy]', 'proxy port or server []', '')
     .option('--components [compdir]', 'react component dir [components]', 'components')
