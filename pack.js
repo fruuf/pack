@@ -5,10 +5,11 @@ const getConfig = require('./util/config');
 const commander = require('commander');
 const path = require('path');
 const jsonfile = require('jsonfile');
+
 var fileConfig = {}; // eslint-disable-line no-var
 
 commander
-  .version('0.2.8')
+  .version('0.2.9')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
@@ -82,5 +83,8 @@ if (options.watch && !options.node) {
       chunks: false, // Makes the build much quieter
       colors: true,
     }));
+    const statsFile = path.join(process.cwd(), options.output, 'stats.json');
+    const statsObj = stats.toJson();
+    jsonfile.writeFile(statsFile, statsObj);
   });
 }

@@ -49,7 +49,7 @@ enables component hot reload while preserving state. if a directory `src/compone
       - main.js
 
 # options
-    .version('0.2.8')
+    .version('0.2.9')
     .description('pack a bundle')
     .option('-n, --node', 'enable node mode', false)
     .option('-w, --watch', 'enable watch mode', false)

@@ -8,7 +8,7 @@ const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
 const findCacheDir = require('find-cache-dir');
 
 
-const ensureExists = fn => {
+const ensureExists = (fn) => {
   try {
     fs.statSync(fn);
     return fn;
@@ -23,6 +23,7 @@ const nodePaths = (process.env.NODE_PATH || '')
   .map(p => path.resolve(p));
 
 const resolve = (loader, queryParts) => {
+  // eslint-disable-next-line no-param-reassign
   if (!queryParts) queryParts = [];
   const loaderPath = require.resolve(loader);
   const query = queryParts
@@ -59,10 +60,10 @@ module.exports = (options) => {
     ]
     .filter(Boolean)
     .concat(nodePaths)
-    .forEach(nodeModulesPath => {
+    .forEach((nodeModulesPath) => {
       fs.readdirSync(nodeModulesPath)
       .filter(x => ['.bin', '.cache'].indexOf(x) === -1)
-      .forEach(mod => {
+      .forEach((mod) => {
         nodeModules[mod] = `commonjs ${mod}`;
       });
     });
@@ -74,21 +75,30 @@ module.exports = (options) => {
     }
     : {};
 
-  const createStyleLoaders = (watch, modules, head) => {
+  const createStyleLoaders = (test, watchMode, modulesMode, compile) => {
+    // eslint-disable-next-line no-var
+    var compiler = false;
+    if (compile === 'sass') compiler = resolve('sass-loader', [`root=${saveRootPath}`]);
+    if (compile === 'less') compiler = resolve('less-loader', [`root=${saveRootPath}`]);
+    const result = { test };
     const innerStack = [
       resolve('css-loader', [
-        modules && 'modules',
-        (modules && watch) && 'localIdentName=[name]__[local]___[hash:base64:5]',
+        modulesMode && 'modules',
+        (modulesMode && watchMode) && 'localIdentName=[name]__[local]___[hash:base64:5]',
         '-autoprefixer',
         `root=${saveRootPath}`,
         'importLoaders=1',
       ]),
       resolve('postcss-loader'),
-      head,
+      compiler,
     ].filter(Boolean);
-    if(watch) return [resolve('style-loader')].concat(innerStack);
-    return [ExtractTextPlugin.extract(resolve('style-loader'), innerStack)];
-  }
+    if (watchMode) {
+      result.loaders = [resolve('style-loader')].concat(innerStack);
+    } else {
+      result.loader = ExtractTextPlugin.extract(innerStack);
+    }
+    return result;
+  };
 
   return {
     entry: [
@@ -159,30 +169,12 @@ module.exports = (options) => {
           test: /\.coffee($|\?)/,
           loader: resolve('coffee-loader'),
         },
-        !node && {
-          test: /\.css($|\?(?!global))/,
-          loaders: createStyleLoaders(watch, modules),
-        },
-        !node && {
-          test: /\.css\?global$/,
-          loaders: createStyleLoaders(watch, false),
-        },
-        !node && {
-          test: /\.less($|\?(?!global))/,
-          loaders: createStyleLoaders(watch, modules, resolve('less-loader', [`root=${saveRootPath}`])),
-        },
-        !node && {
-          test: /\.less\?global$/,
-          loaders: createStyleLoaders(watch, false, resolve('less-loader', [`root=${saveRootPath}`])),
-        },
-        !node && {
-          test: /\.scss($|\?(?!global))/,
-          loaders: createStyleLoaders(watch, modules, resolve('sass-loader', [`root=${saveRootPath}`])),
-        },
-        !node && {
-          test: /\.scss\?global$/,
-          loaders: createStyleLoaders(watch, false, resolve('sass-loader', [`root=${saveRootPath}`])),
-        },
+        !node && createStyleLoaders(/\.css($|\?(?!global))/, watch, modules, 'css'),
+        !node && createStyleLoaders(/\.css\?global$/, watch, false, 'css'),
+        !node && createStyleLoaders(/\.scss($|\?(?!global))/, watch, modules, 'sass'),
+        !node && createStyleLoaders(/\.scss\?global$/, watch, false, 'sass'),
+        !node && createStyleLoaders(/\.less($|\?(?!global))/, watch, modules, 'less'),
+        !node && createStyleLoaders(/\.less\?global$/, watch, false, 'less'),
         !node && {
           test: /\.(png|jpg|jpeg|gif|svg)($|\?)/,
           loaders: [
@@ -227,7 +219,7 @@ module.exports = (options) => {
         ensureExists(path.join(__dirname, '../../node_modules')),
       ].filter(Boolean),
     },
-    devtool: watch && (node && 'eval' || 'eval') || 'source-map',
+    devtool: (watch && 'eval') || 'source-map',
     plugins: [
       new webpack.NoErrorsPlugin(),
       watch && new webpack.HotModuleReplacementPlugin(),
