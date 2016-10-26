@@ -49,6 +49,7 @@ module.exports = (options) => {
   const lint = options.lint;
   const modules = options.modules;
   const template = options.template;
+  const lite = options.lite;
   const hostname = (process.env.C9_HOSTNAME && `http://${process.env.C9_HOSTNAME}`) || `http://localhost:${port}/`;
   const saveRootPath = encodeURIComponent(path.join(root, src));
 
@@ -129,7 +130,7 @@ module.exports = (options) => {
       ].filter(Boolean).concat(nodePaths),
       alias: [
         { main: path.join(root, src, main) },
-        (!watch && !node) && {
+        (!watch && !node && lite) && {
           react: require.resolve('react-lite'),
           'react-dom': require.resolve('react-lite'),
         },

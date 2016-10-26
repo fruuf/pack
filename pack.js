@@ -9,7 +9,7 @@ const jsonfile = require('jsonfile');
 var fileConfig = {}; // eslint-disable-line no-var
 
 commander
-  .version('0.2.9')
+  .version('0.2.10')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
@@ -20,6 +20,7 @@ commander
   .option('-o, --output [directory]', 'output directory [dist]', 'dist')
   .option('-a, --assets [pubdir]', 'assets directory []', '')
   .option('-p, --port [port]', 'port number [8080]', 8080)
+  .option('--react', 'enable react lite', false)
   .option('--bundle [bundle]', 'bundle name [bundle]', 'bundle')
   .option('--main [main]', 'main filename [main]', 'main')
   .option('--static [staticdir]', 'static folder for development server []', '')
