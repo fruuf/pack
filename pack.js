@@ -7,9 +7,10 @@ const path = require('path');
 const jsonfile = require('jsonfile');
 
 var fileConfig = {}; // eslint-disable-line no-var
+var fileConfigSuccess = false; // eslint-disable-line no-var
 
 commander
-  .version('0.2.10')
+  .version('0.2.11')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
@@ -29,15 +30,24 @@ commander
   .option('--components [compdir]', 'react component dir [components]', 'components')
   .parse(process.argv);
 
-try {
-  fileConfig = jsonfile.readFileSync(path.join(process.cwd(), commander.src, '.packrc'));
-} catch (e1) {
+const attemptFileConfig = (fileName) => {
+  if (fileConfigSuccess) return false;
   try {
-    fileConfig = jsonfile.readFileSync(path.join(process.cwd(), '.packrc'));
-  } catch (e2) {
-    // no pack rc
+    fileConfig = jsonfile.readFileSync(fileName);
+    fileConfigSuccess = true;
+    return true;
+  } catch (e) {
+    if (e.name === 'SyntaxError') {
+      throw new Error(`invalid json in ${fileName}`);
+    }
+    return false;
   }
-}
+};
+
+attemptFileConfig(path.join(process.cwd(), commander.src, 'pack.json'));
+attemptFileConfig(path.join(process.cwd(), 'pack.json'));
+attemptFileConfig(path.join(process.cwd(), commander.src, '.packrc'));
+attemptFileConfig(path.join(process.cwd(), '.packrc'));
 
 const normaliseAssets = (assets) => {
   const cleanUrl = path.normalize(String(assets));
