@@ -10,7 +10,7 @@ var fileConfig = {}; // eslint-disable-line no-var
 var fileConfigSuccess = false; // eslint-disable-line no-var
 
 commander
-  .version('0.2.11')
+  .version('0.2.12')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
@@ -86,10 +86,12 @@ if (options.watch && !options.node) {
     contentBase: (options.static && !options.proxy) && path.join(process.cwd(), options.static),
   });
   server.listen(options.port, '0.0.0.0');
+  // eslint-disable-next-line no-console
   console.log(`http://localhost:${options.port}`);
 } else {
   webpack(config, (directError, stats) => {
     if (directError) throw new Error(directError);
+    // eslint-disable-next-line no-console
     console.log(stats.toString({
       chunks: false, // Makes the build much quieter
       colors: true,

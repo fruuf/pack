@@ -3,8 +3,9 @@
 
 const React = require('react');
 const render = require('react-dom').render;
-// eslint-disable-next-line global-require
+// eslint-disable-next-line global-require, import/no-extraneous-dependencies
 const App = require('main').default;
+
 const renderTarget = document.getElementById('render') || document.createElement('div');
 if (!document.body.contains(renderTarget)) {
   document.body.appendChild(renderTarget);
@@ -13,7 +14,9 @@ if (!document.body.contains(renderTarget)) {
 if (process.env.NODE_ENV === 'production') {
   render(React.createElement(App, null), renderTarget);
 } else {
+  // eslint-disable-next-line global-require
   const AppContainer = require('react-hot-loader').AppContainer;
+
   render(
     React.createElement(
       AppContainer,
@@ -24,9 +27,10 @@ if (process.env.NODE_ENV === 'production') {
   );
 
   if (module.hot) {
-    module.hot.accept('main', function () {
-      // eslint-disable-next-line global-require
+    module.hot.accept('main', function acceptUi() {
+      // eslint-disable-next-line global-require, import/no-extraneous-dependencies
       const NewApp = require('main').default;
+
       render(
         React.createElement(
           AppContainer,

@@ -14,13 +14,9 @@
 - builds bundle for node v4 and above
 
 # get started
-## demo
-    git checkout demo
-    npm install
-    npm start
-
 ## install
-    npm install fruuf/pack --save
+    npm install pack-cli --save
+    yarn add pack-cli
 
 ## add package links (package.json)
 
@@ -49,16 +45,4 @@ enables component hot reload while preserving state. if a directory `src/compone
       - main.js
 
 # options
-    .version('0.2.11')
-    .description('pack a bundle')
-    .option('-n, --node', 'enable node mode', false)
-    .option('-w, --watch', 'enable watch mode', false)
-    .option('-r, --react', 'enable react', false)
-    .option('-s --src [srcdir]', 'source directory [src]', 'src')
-    .option('-o, --output [directory]', 'output directory [dist]', 'dist')
-    .option('-a --assets [pubdir]', 'assets directory []', '')
-    .option('-p, --port [port]', 'port number [8080]', 8080)
-    .option('--bundle [bundle]', 'bundle name [bundle]', 'bundle')
-    .option('--main [main]', 'main filename [main]', 'main')
-    .option('--proxy [proxy]', 'proxy port or server []', '')
-    .option('--components [compdir]', 'react component dir [components]', 'components')
+    pack -h

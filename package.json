@@ -1,16 +1,14 @@
 {
   "name": "pack-cli",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "description": "pack cli",
   "bin": {
     "pack": ".bin/pack"
   },
-  "keywords": [
-    "webpack",
-    "hot-reload",
-    "sass",
-    "react"
-  ],
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "keywords": [ "webpack", "hot-reload", "sass", "react", "less" ],
   "author": "fruuf",
   "license": "MIT",
   "repository": {

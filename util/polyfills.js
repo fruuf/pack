@@ -1,3 +1,4 @@
+/* global window */
 /* eslint-disable global-require */
 if (typeof Promise === 'undefined') {
   require('promise/lib/rejection-tracking').enable();
