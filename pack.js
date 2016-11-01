@@ -14,7 +14,6 @@ commander
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
-  .option('-l, --lint', 'enable linter', false)
   .option('-r, --react', 'enable react', false)
   .option('-m, --modules', 'enable css modules', false)
   .option('-s, --src [srcdir]', 'source directory [src]', 'src')

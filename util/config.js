@@ -46,7 +46,6 @@ module.exports = (options) => {
   const main = options.main;
   const node = options.node;
   const proxy = !!options.proxy;
-  const lint = options.lint;
   const modules = options.modules;
   const template = options.template;
   const lite = options.lite;
@@ -107,7 +106,7 @@ module.exports = (options) => {
       (!node && watch) && resolve('react-hot-loader/patch'),
       (!node && watch) && resolve('webpack-dev-server/client', [hostname]),
       (!node && watch) && resolve('webpack/hot/dev-server'),
-      !node && path.join(__dirname, 'polyfills'),
+      !node && resolve('whatwg-fetch'),
       (node || !react) && path.join(root, src, main),
       (!node && react) && path.join(__dirname, 'react'),
     ].filter(Boolean),
@@ -140,13 +139,6 @@ module.exports = (options) => {
     },
     watch: !!watch,
     module: {
-      preLoaders: [
-        lint && {
-          test: /\.js($|\?)/,
-          loader: resolve('eslint-loader'),
-          include: path.join(root, src),
-        },
-      ].filter(Boolean),
       loaders: [
         {
           test: /\.js($|\?)/,
@@ -155,8 +147,14 @@ module.exports = (options) => {
           query: {
             babelrc: false,
             cacheDirectory: watch && findCacheDir({ name: 'pack' }),
-            presets: [resolve('babel-preset-airbnb')],
+            presets: [
+              resolve('babel-preset-react'),
+              resolve('babel-preset-es2015'),
+              resolve('babel-preset-es2016'),
+              resolve('babel-preset-es2017'),
+            ],
             plugins: [
+              resolve('babel-plugin-transform-runtime'),
               (react && watch && !node) && resolve('react-hot-loader/babel'),
               [resolve('babel-root-slash-import'), { rootPathSuffix: src }],
             ].filter(Boolean),
@@ -266,9 +264,5 @@ module.exports = (options) => {
         ],
       }),
     ])),
-    eslint: lint && {
-      configFile: resolve('eslint-config-airbnb'),
-      useEslintrc: false,
-    },
   };
 };
