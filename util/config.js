@@ -38,7 +38,7 @@ module.exports = (options) => {
   const output = options.output;
   const react = options.react;
   const src = options.src;
-  const watch = options.watch;
+  const watch = options.watch || options.filewatch;
   const port = options.port;
   const components = options.components;
   const assets = options.assets;

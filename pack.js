@@ -10,10 +10,11 @@ var fileConfig = {}; // eslint-disable-line no-var
 var fileConfigSuccess = false; // eslint-disable-line no-var
 
 commander
-  .version('0.2.13')
+  .version('0.2.14')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
+  .option('-f --filewatch', 'enable file watch mode', false)
   .option('-r, --react', 'enable react', false)
   .option('-m, --modules', 'enable css modules', false)
   .option('-s, --src [srcdir]', 'source directory [src]', 'src')
