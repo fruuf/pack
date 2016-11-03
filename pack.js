@@ -10,7 +10,7 @@ var fileConfig = {}; // eslint-disable-line no-var
 var fileConfigSuccess = false; // eslint-disable-line no-var
 
 commander
-  .version('0.2.12')
+  .version('0.2.13')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
@@ -27,6 +27,7 @@ commander
   .option('--proxy [proxy]', 'proxy port or server []', '')
   .option('--template [template]', 'html template [index.html]', 'index.html')
   .option('--components [compdir]', 'react component dir [components]', 'components')
+  .option('--resolve [resolve]', 'resolve additional extensions []', '')
   .parse(process.argv);
 
 const attemptFileConfig = (fileName) => {

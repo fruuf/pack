@@ -49,8 +49,11 @@ module.exports = (options) => {
   const modules = options.modules;
   const template = options.template;
   const lite = options.lite;
+  const additionalResolve = options.resolve;
   const hostname = (process.env.C9_HOSTNAME && `http://${process.env.C9_HOSTNAME}`) || `http://localhost:${port}/`;
   const saveRootPath = encodeURIComponent(path.join(root, src));
+
+  const additionalExtensions = ((additionalResolve || '').match(/[\w\d]+/g) || []).map(ext => `.${ext}`);
 
   const nodeModules = {};
   if (node) {
@@ -121,7 +124,7 @@ module.exports = (options) => {
     externals: node ? nodeModules : (options.externals || {}),
     context: root,
     resolve: {
-      extensions: ['', '.js', '.json', '.coffee'],
+      extensions: ['', '.js', '.json', '.coffee'].concat(additionalExtensions),
       fallback: [
         react && ensureExists(path.join(root, src, components)),
         ensureExists(path.join(__dirname, '../node_modules')),
