@@ -39,6 +39,7 @@ module.exports = (options) => {
   const react = options.react;
   const src = options.src;
   const watch = options.watch || options.filewatch;
+  const filewatch = options.filewatch;
   const port = options.port;
   const components = options.components;
   const assets = options.assets;
@@ -106,9 +107,9 @@ module.exports = (options) => {
   return {
     entry: [
       (node && watch) && resolve('webpack/hot/poll', ['1000']),
-      (!node && watch) && resolve('react-hot-loader/patch'),
-      (!node && watch) && resolve('webpack-dev-server/client', [hostname]),
-      (!node && watch) && resolve('webpack/hot/dev-server'),
+      (!node && watch && !filewatch) && resolve('react-hot-loader/patch'),
+      (!node && watch && !filewatch) && resolve('webpack-dev-server/client', [hostname]),
+      (!node && watch && !filewatch) && resolve('webpack/hot/dev-server'),
       !node && resolve('whatwg-fetch'),
       (node || !react) && path.join(root, src, main),
       (!node && react) && path.join(__dirname, 'react'),
@@ -224,7 +225,7 @@ module.exports = (options) => {
     devtool: (watch && 'eval') || 'source-map',
     plugins: [
       new webpack.NoErrorsPlugin(),
-      watch && new webpack.HotModuleReplacementPlugin(),
+      watch && !filewatch && new webpack.HotModuleReplacementPlugin(),
       watch && new webpack.DefinePlugin({
         'process.env.NODE_ENV': JSON.stringify('development'),
       }),
