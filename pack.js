@@ -5,31 +5,127 @@ const getConfig = require('./util/config');
 const commander = require('commander');
 const path = require('path');
 const jsonfile = require('jsonfile');
+const difference = require('lodash/difference');
+const pick = require('lodash/pick');
 
 var fileConfig = {}; // eslint-disable-line no-var
 var fileConfigSuccess = false; // eslint-disable-line no-var
 
+const VALID_OPTIONS = [
+  'watch',
+  'react',
+  'lite',
+  'cssmodules',
+  'node',
+  'flatten',
+  'global',
+  'port',
+  'assets',
+  'src',
+  'main',
+  'dist',
+  'bundle',
+  'proxy',
+  'watchwrite',
+  'resolve',
+  'index',
+  'components',
+  'externals',
+];
+
 commander
-  .version('0.2.16')
+  .version('1.0.0')
   .description('pack a bundle')
-  .option('-n, --node', 'enable node mode', false)
-  .option('-w, --watch', 'enable watch mode', false)
-  .option('-f --filewatch', 'enable file watch mode', false)
-  .option('-r, --react', 'enable react', false)
-  .option('-m, --modules', 'enable css modules', false)
-  .option('-g, --global', 'provide when global installed', false)
-  .option('-s, --src [srcdir]', 'source directory [src]', 'src')
-  .option('-o, --output [directory]', 'output directory [dist]', 'dist')
-  .option('-a, --assets [pubdir]', 'assets directory []', '')
-  .option('-p, --port [port]', 'port number [8080]', 8080)
-  .option('--react', 'enable react lite', false)
-  .option('--bundle [bundle]', 'bundle name [bundle]', 'bundle')
-  .option('--main [main]', 'main filename [main]', 'main')
-  .option('--static [staticdir]', 'static folder for development server []', '')
-  .option('--proxy [proxy]', 'proxy port or server []', '')
-  .option('--template [template]', 'html template [index.html]', 'index.html')
-  .option('--components [compdir]', 'react component dir [components]', 'components')
-  .option('--resolve [resolve]', 'resolve additional extensions []', '')
+  .option(
+    '-w, --watch',
+    'hot reload on file change (development)',
+    false
+  )
+  .option(
+    '-r, --react',
+    'render "export default <Component />" from sourcefile',
+    false
+  )
+  .option(
+    '-l, --lite',
+    'use react lite in build (production)',
+    false
+  )
+  .option(
+    '-c, --cssmodules',
+    'enable css modules',
+    false
+  )
+  .option(
+    '-n, --node',
+    'build for nodeJS',
+    false
+  )
+  .option(
+    '-f, --flatten',
+    'prevent subfolders in output',
+    false
+  )
+  .option(
+    '-g, --global',
+    'provide when pack-cli is installed global',
+    false
+  )
+  .option(
+    '-p, --port [number]',
+    'port number for development server (development) [8080]',
+    8080
+  )
+  .option(
+    '-a, --assets [directory]',
+    'assets directory on server [assets]',
+    'assets'
+  )
+  .option(
+    '-s, --src [directory]',
+    'source directory [src]',
+    'src'
+  )
+  .option(
+    '-m, --main [filename]',
+    'source filename in src [main]',
+    'main'
+  )
+  .option(
+    '-d, --dist [directory]',
+    'output directory [dist]',
+    'dist'
+  )
+  .option(
+    '-b, --bundle [filename]',
+    'output filename in dist [bundle]',
+    'bundle'
+  )
+  .option(
+    '--proxy [proxy/address]',
+    'proxy port or address for development server (development) []',
+    ''
+  )
+  .option(
+    '--watchwrite',
+    'write bundle on file change in (development)',
+    false
+  )
+  .option(
+    '--resolve [extensions]',
+    'resolve extensions other than .js, .json, .coffee []'
+    , ''
+  )
+  .option(
+    '--index [filename]',
+    'html entry file in src [index.html]',
+    'index.html'
+  )
+  .option(
+    '--components [directory]',
+    'directory for react components in src [components]',
+    'components'
+  )
   .parse(process.argv);
 
 const attemptFileConfig = (fileName) => {
@@ -51,16 +147,16 @@ attemptFileConfig(path.join(process.cwd(), 'pack.json'));
 attemptFileConfig(path.join(process.cwd(), commander.src, '.packrc'));
 attemptFileConfig(path.join(process.cwd(), '.packrc'));
 
-const normaliseAssets = (assets) => {
-  const cleanUrl = path.normalize(String(assets));
-  if (cleanUrl === '.') return '/';
-  return `${cleanUrl[0] === '/' ? '' : '/'}${cleanUrl}/`;
-};
 
-const options = Object.assign({}, commander, fileConfig, {
-  root: process.cwd(),
-});
-options.assets = normaliseAssets(options.assets);
+const invalidFileOptions = difference(Object.keys(fileConfig), VALID_OPTIONS);
+if (invalidFileOptions.length) {
+  throw new Error(`Invalid file options provided: ${invalidFileOptions.join(', ')}`);
+}
+const options = Object.assign(
+  pick(commander, VALID_OPTIONS),
+  pick(fileConfig, VALID_OPTIONS),
+  { root: process.cwd() }
+);
 const rawConfig = getConfig(options);
 const config = validate(rawConfig);
 
@@ -85,7 +181,6 @@ if (options.watch && !options.node) {
         : String(options.proxy),
       }
       : {},
-    contentBase: (options.static && !options.proxy) && path.join(process.cwd(), options.static),
   });
   server.listen(options.port, '0.0.0.0');
   // eslint-disable-next-line no-console
@@ -95,10 +190,10 @@ if (options.watch && !options.node) {
     if (directError) throw new Error(directError);
     // eslint-disable-next-line no-console
     console.log(stats.toString({
-      chunks: false, // Makes the build much quieter
+      chunks: false,
       colors: true,
     }));
-    const statsFile = path.join(process.cwd(), options.output, 'stats.json');
+    const statsFile = path.join(process.cwd(), options.dist, 'stats.json');
     const statsObj = stats.toJson();
     jsonfile.writeFile(statsFile, statsObj);
   });
