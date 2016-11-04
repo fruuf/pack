@@ -22,16 +22,6 @@ const nodePaths = (process.env.NODE_PATH || '')
   .filter(Boolean)
   .map(p => path.resolve(p));
 
-const resolve = (loader, queryParts) => {
-  // eslint-disable-next-line no-param-reassign
-  if (!queryParts) queryParts = [];
-  const loaderPath = require.resolve(loader);
-  const query = queryParts
-    .filter(Boolean)
-    .join('&');
-  return `${loaderPath}${query ? `?${query}` : ''}`;
-};
-
 
 module.exports = (options) => {
   const root = options.root;
@@ -50,6 +40,7 @@ module.exports = (options) => {
   const modules = options.modules;
   const template = options.template;
   const lite = options.lite;
+  const isGlobal = options.global;
   const additionalResolve = options.resolve;
   const hostname = (process.env.C9_HOSTNAME && `http://${process.env.C9_HOSTNAME}`) || `http://localhost:${port}/`;
   const saveRootPath = encodeURIComponent(path.join(root, src));
@@ -78,6 +69,18 @@ module.exports = (options) => {
       inject: true,
     }
     : {};
+
+  const resolve = (loader, queryParts) => {
+    // eslint-disable-next-line no-param-reassign
+    if (!queryParts) queryParts = [];
+    const loaderPath = isGlobal
+     ? require.resolve(loader)
+     : loader;
+    const query = queryParts
+      .filter(Boolean)
+      .join('&');
+    return `${loaderPath}${query ? `?${query}` : ''}`;
+  };
 
   const createStyleLoaders = (test, watchMode, modulesMode, compile) => {
     // eslint-disable-next-line no-var
@@ -134,8 +137,8 @@ module.exports = (options) => {
       alias: [
         { main: path.join(root, src, main) },
         (!watch && !node && lite) && {
-          react: require.resolve('react-lite'),
-          'react-dom': require.resolve('react-lite'),
+          react: resolve('react-lite'),
+          'react-dom': resolve('react-lite'),
         },
       ]
       .filter(Boolean)

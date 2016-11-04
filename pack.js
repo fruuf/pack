@@ -17,6 +17,7 @@ commander
   .option('-f --filewatch', 'enable file watch mode', false)
   .option('-r, --react', 'enable react', false)
   .option('-m, --modules', 'enable css modules', false)
+  .option('-g, --global', 'provide when global installed', false)
   .option('-s, --src [srcdir]', 'source directory [src]', 'src')
   .option('-o, --output [directory]', 'output directory [dist]', 'dist')
   .option('-a, --assets [pubdir]', 'assets directory []', '')
