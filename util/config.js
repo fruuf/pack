@@ -213,6 +213,7 @@ module.exports = (options) => {
           loaders: [resolve('url-loader', ['limit=5000', 'name=media/[name].[hash:base64:6].[ext]'])],
         },
         node && {
+          // eslint-disable-next-line max-len
           test: /\.(css|scss|less|woff|ttf|eot|woff2|svg|ico|otf|webp|png|jpg|jpeg|gif|html|mp4|webm)($|\?)/,
           loader: resolve('raw-loader'),
         },
@@ -251,7 +252,9 @@ module.exports = (options) => {
       !watch && new webpack.DefinePlugin({
         'process.env.NODE_ENV': JSON.stringify('production'),
       }),
-      (!node && (watch || templateOptions.template) && !proxy) && new HtmlWebpackPlugin(templateOptions),
+      (!node && (watch || templateOptions.template) && !proxy) && new HtmlWebpackPlugin(
+        templateOptions
+      ),
       watch && new CaseSensitivePathsPlugin(),
     ].filter(Boolean),
     node: {

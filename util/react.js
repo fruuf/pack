@@ -3,7 +3,7 @@
 
 const React = require('react');
 const render = require('react-dom').render;
-// eslint-disable-next-line global-require, import/no-extraneous-dependencies
+// eslint-disable-next-line
 const App = require('main').default;
 
 const renderTarget = document.getElementById('render') || document.createElement('div');
@@ -28,7 +28,7 @@ if (process.env.NODE_ENV === 'production') {
 
   if (module.hot) {
     module.hot.accept('main', function acceptUi() {
-      // eslint-disable-next-line global-require, import/no-extraneous-dependencies
+      // eslint-disable-next-line 
       const NewApp = require('main').default;
 
       render(

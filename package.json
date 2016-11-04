@@ -1,19 +1,20 @@
 {
   "name": "pack-cli",
-  "version": "0.2.15",
+  "version": "0.2.16",
   "description": "pack cli",
   "bin": {
     "pack": ".bin/pack"
   },
   "scripts": {
-    "lint": "eslint ."
+    "lint": "eslint pack.js util/*"
   },
   "keywords": [
     "webpack",
     "hot-reload",
     "sass",
     "react",
-    "less"
+    "less",
+    "react-lite"
   ],
   "author": "fruuf",
   "license": "MIT",

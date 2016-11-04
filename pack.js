@@ -10,7 +10,7 @@ var fileConfig = {}; // eslint-disable-line no-var
 var fileConfigSuccess = false; // eslint-disable-line no-var
 
 commander
-  .version('0.2.15')
+  .version('0.2.16')
   .description('pack a bundle')
   .option('-n, --node', 'enable node mode', false)
   .option('-w, --watch', 'enable watch mode', false)
