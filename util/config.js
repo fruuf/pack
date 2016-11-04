@@ -66,9 +66,7 @@ module.exports = (options) => {
   const resolve = (loader, queryParts) => {
     // eslint-disable-next-line no-param-reassign
     if (!queryParts) queryParts = [];
-    const loaderPath = options.global
-     ? require.resolve(loader)
-     : loader;
+    const loaderPath = require.resolve(loader);
     const query = queryParts
       .filter(Boolean)
       .join('&');

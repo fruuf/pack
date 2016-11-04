@@ -18,7 +18,6 @@ const VALID_OPTIONS = [
   'cssmodules',
   'node',
   'flatten',
-  'global',
   'port',
   'assets',
   'src',
@@ -64,11 +63,6 @@ commander
   .option(
     '-f, --flatten',
     'prevent subfolders in output',
-    false
-  )
-  .option(
-    '-g, --global',
-    'provide when pack-cli is installed global',
     false
   )
   .option(
