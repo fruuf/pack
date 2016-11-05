@@ -162,6 +162,13 @@ module.exports = (options) => {
           loader: resolve('json-loader'),
         },
         {
+          test: /\.yaml($|\?)/,
+          loaders: [
+            resolve('json-loader'),
+            resolve('yaml-loader'),
+          ],
+        },
+        {
           test: /\.coffee($|\?)/,
           loader: resolve('coffee-loader'),
         },
@@ -184,7 +191,7 @@ module.exports = (options) => {
         },
         !options.node && {
           test: /\.(webp)($|\?)/,
-          loaders: [resolve('url-loader', ['limit=5000', `name=${imagesPrefix}[name].[hash:base64:6].[ext]`])],
+          loader: resolve('url-loader', ['limit=5000', `name=${imagesPrefix}[name].[hash:base64:6].[ext]`]),
         },
         !options.node && {
           test: /\.(html)($|\?)/,
@@ -196,11 +203,11 @@ module.exports = (options) => {
         },
         !options.node && {
           test: /\.(woff|ttf|eot|woff2|otf)($|\?)/,
-          loaders: [resolve('url-loader', ['limit=5000', `name=${fontsPrefix}[name].[hash:base64:6].[ext]`])],
+          loader: resolve('url-loader', ['limit=5000', `name=${fontsPrefix}[name].[hash:base64:6].[ext]`]),
         },
         !options.node && {
           test: /\.(ico|mp4|webm)($|\?)/,
-          loaders: [resolve('url-loader', ['limit=5000', `name=${mediaPrefix}[name].[hash:base64:6].[ext]`])],
+          loader: resolve('url-loader', ['limit=5000', `name=${mediaPrefix}[name].[hash:base64:6].[ext]`]),
         },
         options.node && {
           // eslint-disable-next-line max-len

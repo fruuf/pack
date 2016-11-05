@@ -1,6 +1,6 @@
 {
   "name": "pack-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "pack cli",
   "bin": {
     "pack": ".bin/pack"
@@ -66,7 +66,8 @@
     "webpack": "^1.13.1",
     "webpack-dev-server": "^1.15.1",
     "webpack-validator": "^2.2.7",
-    "whatwg-fetch": "^1.0.0"
+    "whatwg-fetch": "^1.0.0",
+    "yaml-loader": "^0.4.0"
   },
   "devDependencies": {
     "eslint": "^3.8.1",
