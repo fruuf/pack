@@ -7,6 +7,7 @@ const path = require('path');
 const jsonfile = require('jsonfile');
 const difference = require('lodash/difference');
 const pick = require('lodash/pick');
+const colors = require('colors/safe');
 
 var fileConfig = {}; // eslint-disable-line no-var
 var fileConfigSuccess = false; // eslint-disable-line no-var
@@ -178,14 +179,22 @@ if (options.watch && !options.node) {
   console.log(`http://localhost:${options.port}`);
 } else {
   webpack(config, (directError, stats) => {
-    if (directError) throw new Error(directError);
-    // eslint-disable-next-line no-console
-    console.log(stats.toString({
-      chunks: false,
-      colors: true,
-    }));
-    const statsFile = path.join(process.cwd(), options.dist, 'stats.json');
-    const statsObj = stats.toJson();
-    jsonfile.writeFile(statsFile, statsObj);
+    if (directError) {
+      // eslint-disable-next-line no-console
+      console.error(colors.bold.red(`\n\n\n------ build failed for ${options.src} ------`));
+      // eslint-disable-next-line no-console
+      console.error(directError.message);
+    } else {
+      // eslint-disable-next-line no-console
+      console.log(colors.bold.green(`\n\n\n------ build succeeded for ${options.src} ------`));
+      // eslint-disable-next-line no-console
+      console.log(stats.toString({
+        chunks: false,
+        colors: true,
+      }));
+      const statsFile = path.join(process.cwd(), options.dist, 'stats.json');
+      const statsObj = stats.toJson();
+      jsonfile.writeFile(statsFile, statsObj);
+    }
   });
 }
