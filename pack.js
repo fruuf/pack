@@ -33,7 +33,7 @@ const VALID_OPTIONS = [
 ];
 
 commander
-  .version('1.0.1')
+  .version('1.0.2')
   .description('pack a bundle')
   .option(
     '-w, --watch',

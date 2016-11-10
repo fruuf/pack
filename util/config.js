@@ -152,6 +152,8 @@ module.exports = (options) => {
             ],
             plugins: [
               resolve('babel-plugin-transform-runtime'),
+              resolve('babel-plugin-transform-es2015-destructuring'),
+              resolve('babel-plugin-transform-object-rest-spread'),
               (options.react && options.watch && !options.node) && resolve('react-hot-loader/babel'),
               [resolve('babel-root-slash-import'), { rootPathSuffix: options.src }],
             ].filter(Boolean),
