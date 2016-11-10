@@ -138,9 +138,6 @@ const attemptFileConfig = (fileName) => {
 
 attemptFileConfig(path.join(process.cwd(), commander.src, 'pack.json'));
 attemptFileConfig(path.join(process.cwd(), 'pack.json'));
-attemptFileConfig(path.join(process.cwd(), commander.src, '.packrc'));
-attemptFileConfig(path.join(process.cwd(), '.packrc'));
-
 
 const invalidFileOptions = difference(Object.keys(fileConfig), VALID_OPTIONS);
 if (invalidFileOptions.length) {
