@@ -34,7 +34,7 @@ const VALID_OPTIONS = [
 ];
 
 commander
-  .version('1.0.2')
+  .version('1.0.3')
   .description('pack a bundle')
   .option(
     '-w, --watch',
@@ -144,11 +144,19 @@ const invalidFileOptions = difference(Object.keys(fileConfig), VALID_OPTIONS);
 if (invalidFileOptions.length) {
   throw new Error(`Invalid file options provided: ${invalidFileOptions.join(', ')}`);
 }
-const options = Object.assign(
+
+const normaliseAssets = (assets) => {
+  const cleanUrl = path.normalize(String(assets));
+  if (cleanUrl === '.') return '/';
+  return `${cleanUrl[0] === '/' ? '' : '/'}${cleanUrl}/`;
+};
+
+const tempOptions = Object.assign(
   pick(commander, VALID_OPTIONS),
   pick(fileConfig, VALID_OPTIONS),
   { root: process.cwd() }
 );
+const options = Object.assign({}, tempOptions, { assets: normaliseAssets(tempOptions.assets) });
 const rawConfig = getConfig(options);
 const config = validate(rawConfig);
 
@@ -166,7 +174,7 @@ if (options.watch && !options.node) {
     },
     hot: true,
     inline: true,
-    historyApiFallback: !options.proxy && { index: options.assets },
+    historyApiFallback: !options.proxy && { index: path.join(options.assets, 'index.html') },
     proxy: options.proxy
       ? { '**': String(options.proxy).match(/^\d+$/)
         ? `http://localhost:${options.proxy}`

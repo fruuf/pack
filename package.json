@@ -1,6 +1,6 @@
 {
   "name": "pack-cli",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "pack cli",
   "bin": {
     "pack": ".bin/pack"

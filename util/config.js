@@ -22,16 +22,9 @@ const nodePaths = (process.env.NODE_PATH || '')
   .filter(Boolean)
   .map(p => path.resolve(p));
 
-const normaliseAssets = (assets) => {
-  const cleanUrl = path.normalize(String(assets));
-  if (cleanUrl === '.') return '/';
-  return `${cleanUrl[0] === '/' ? '' : '/'}${cleanUrl}/`;
-};
-
 module.exports = (options) => {
   const hostname = (process.env.C9_HOSTNAME && `http://${process.env.C9_HOSTNAME}`) || `http://localhost:${options.port}/`;
   const saveRootPath = encodeURIComponent(path.join(options.root, options.src));
-  const assets = normaliseAssets(options.assets);
   const additionalExtensions = ((options.resolve || '').match(/[\w\d]+/g) || []).map(ext => `.${ext}`);
 
   const jsPrefix = options.flatten ? '' : 'js/';
@@ -110,7 +103,7 @@ module.exports = (options) => {
     ].filter(Boolean),
     output: {
       path: path.join(options.root, options.dist),
-      publicPath: assets,
+      publicPath: options.assets,
       filename: `${options.node ? '' : jsPrefix}${options.bundle}.js`,
       pathinfo: Boolean(options.watch || options.watchwrite),
     },
