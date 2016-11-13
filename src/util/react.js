@@ -1,10 +1,8 @@
-/* eslint-disable prefer-arrow-callback */
 /* global document, window */
-
-const React = require('react');
-const render = require('react-dom').render;
+import React from 'react';
+import { render } from 'react-dom';
 // eslint-disable-next-line
-const App = require('main').default;
+import App from 'main';
 
 const renderTarget = document.getElementById('render') || document.createElement('div');
 if (!document.body.contains(renderTarget)) {
@@ -27,8 +25,8 @@ if (process.env.NODE_ENV === 'production') {
   );
 
   if (module.hot) {
-    module.hot.accept('main', function acceptUi() {
-      // eslint-disable-next-line 
+    module.hot.accept('main', () => {
+      // eslint-disable-next-line
       const NewApp = require('main').default;
 
       render(

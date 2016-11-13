@@ -1,12 +1,11 @@
-const path = require('path');
-const webpack = require('webpack');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const fs = require('fs');
-const autoprefixer = require('autoprefixer');
-const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
-const findCacheDir = require('find-cache-dir');
-
+import path from 'path';
+import webpack from 'webpack';
+import ExtractTextPlugin from 'extract-text-webpack-plugin';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import fs from 'fs';
+import autoprefixer from 'autoprefixer';
+import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
+import findCacheDir from 'find-cache-dir';
 
 const ensureExists = (fn) => {
   try {
@@ -22,7 +21,7 @@ const nodePaths = (process.env.NODE_PATH || '')
   .filter(Boolean)
   .map(p => path.resolve(p));
 
-module.exports = (options) => {
+export default (options) => {
   const hostname = (process.env.C9_HOSTNAME && `http://${process.env.C9_HOSTNAME}`) || `http://localhost:${options.port}/`;
   const saveRootPath = encodeURIComponent(path.join(options.root, options.src));
   const additionalExtensions = ((options.resolve || '').match(/[\w\d]+/g) || []).map(ext => `.${ext}`);
@@ -113,7 +112,7 @@ module.exports = (options) => {
     resolve: {
       extensions: ['', '.js', '.json', '.coffee'].concat(additionalExtensions),
       fallback: [
-        options.react && ensureExists(path.join(options.root, options.src, options.components)),
+        options.react && ensureExists(path.join(options.root, options.src, 'components')),
         ensureExists(path.join(__dirname, '../node_modules')),
         ensureExists(path.join(__dirname, '../../node_modules')),
       ].filter(Boolean).concat(nodePaths),
@@ -213,7 +212,6 @@ module.exports = (options) => {
     },
     resolveLoader: {
       fallback: [
-        options.react && ensureExists(path.join(options.root, options.src, options.components)),
         ensureExists(path.join(__dirname, '../node_modules')),
         ensureExists(path.join(__dirname, '../../node_modules')),
       ].filter(Boolean),

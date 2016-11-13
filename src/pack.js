@@ -1,16 +1,20 @@
-const webpack = require('webpack');
-const WebpackDevServer = require('webpack-dev-server');
-const validate = require('webpack-validator');
-const getConfig = require('./util/config');
-const commander = require('commander');
-const path = require('path');
-const jsonfile = require('jsonfile');
-const difference = require('lodash/difference');
-const pick = require('lodash/pick');
-const colors = require('colors/safe');
+import webpack from 'webpack';
+import WebpackDevServer from 'webpack-dev-server';
+import validate from 'webpack-validator';
+import commander from 'commander';
+import path from 'path';
+import jsonfile from 'jsonfile';
+import difference from 'lodash/difference';
+import pick from 'lodash/pick';
+import colors from 'colors/safe';
+import Mocha from 'mocha';
+import fs from 'fs';
+import glob from 'glob';
+import getConfig from './util/config';
+import setupTest from './util/test';
 
-var fileConfig = {}; // eslint-disable-line no-var
-var fileConfigSuccess = false; // eslint-disable-line no-var
+let fileConfig = {}; // eslint-disable-line no-var
+let fileConfigSuccess = false; // eslint-disable-line no-var
 
 const VALID_OPTIONS = [
   'watch',
@@ -22,6 +26,7 @@ const VALID_OPTIONS = [
   'port',
   'assets',
   'src',
+  'test',
   'main',
   'dist',
   'bundle',
@@ -29,16 +34,20 @@ const VALID_OPTIONS = [
   'watchwrite',
   'resolve',
   'index',
-  'components',
   'externals',
 ];
 
 commander
-  .version('1.0.3')
+  .version(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).version)
   .description('pack a bundle')
   .option(
     '-w, --watch',
     'hot reload on file change (development)',
+    false
+  )
+  .option(
+    '-t, --test',
+    'run tests in test directory (development)',
     false
   )
   .option(
@@ -116,11 +125,6 @@ commander
     'html entry file in src [index.html]',
     'index.html'
   )
-  .option(
-    '--components [directory]',
-    'directory for react components in src [components]',
-    'components'
-  )
   .parse(process.argv);
 
 const attemptFileConfig = (fileName) => {
@@ -160,7 +164,27 @@ const options = Object.assign({}, tempOptions, { assets: normaliseAssets(tempOpt
 const rawConfig = getConfig(options);
 const config = validate(rawConfig);
 
-if (options.watch && !options.node) {
+if (options.test) {
+  const mocha = new Mocha();
+  setupTest(options);
+  const testFiles = glob.sync('**/*.test.js', {
+    cwd: options.root,
+    ignore: 'node_modules/**',
+  });
+  mocha.addFile(path.join(__dirname, 'util/test.js'));
+  testFiles.forEach((testFile) => {
+    mocha.addFile(path.join(options.root, testFile));
+  });
+  mocha.run((failures) => {
+    if (failures === 0) {
+      // eslint-disable-next-line no-console
+      console.log(colors.bold.green(`\n\n\n------ tests passed ------`));
+    } else {
+      // eslint-disable-next-line no-console
+      console.error(colors.bold.red(`\n\n\n------ ${failures} tests failed ------`));
+    }
+  });
+} else if (options.watch && !options.node) {
   const compiler = webpack(config);
   const server = new WebpackDevServer(compiler, {
     publicPath: config.output.publicPath,

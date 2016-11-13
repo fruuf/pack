@@ -1,7 +1,9 @@
 node_modules
+tests
+src
 npm-debug.log
-demo
-dist
-build
+circle.yml
 .gitignore
 .eslintrc
+.git
+.tmp

@@ -1,12 +1,16 @@
 {
   "name": "pack-cli",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "pack cli",
   "bin": {
     "pack": ".bin/pack"
   },
   "scripts": {
-    "lint": "eslint pack.js util/*"
+    "start": "rimraf lib && babel src --out-dir lib --watch",
+    "lint": "eslint src/* tests/*",
+    "build": "npm run lint && rimraf lib && babel src --out-dir lib",
+    "test": "npm run build && mocha --opts mocha.opts",
+    "publish": "npm run test && npm publish"
   },
   "keywords": [
     "webpack",
@@ -27,7 +31,6 @@
   },
   "dependencies": {
     "autoprefixer": "^6.4.1",
-    "babel-core": "^6.14.0",
     "babel-loader": "^6.2.4",
     "babel-plugin-transform-es2015-destructuring": "^6.18.0",
     "babel-plugin-transform-object-rest-spread": "^6.16.0",
@@ -36,30 +39,40 @@
     "babel-preset-es2016": "^6.16.0",
     "babel-preset-es2017": "^6.16.0",
     "babel-preset-react": "^6.16.0",
+    "babel-register": "^6.18.0",
     "babel-root-slash-import": "^1.1.0",
     "babel-runtime": "^6.18.0",
     "case-sensitive-paths-webpack-plugin": "^1.1.4",
+    "chai": "^3.5.0",
+    "chai-enzyme": "^0.6.0",
     "coffee-loader": "^0.7.2",
     "coffee-script": "^1.10.0",
     "colors": "^1.1.2",
     "commander": "^2.9.0",
     "css-loader": "^0.25.0",
+    "enzyme": "^2.6.0",
     "extract-text-webpack-plugin": "^1.0.1",
     "file-loader": "^0.9.0",
     "find-cache-dir": "^0.1.1",
+    "glob": "^7.1.1",
     "html-webpack-plugin": "^2.22.0",
+    "ignore-styles": "^5.0.1",
     "image-webpack-loader": "^3.0.0",
+    "jsdom": "^9.8.3",
+    "jsdom-global": "^2.1.0",
     "json-loader": "^0.5.4",
     "jsonfile": "^2.4.0",
     "less": "^2.7.1",
     "less-loader": "^2.2.3",
     "lodash": "^4.16.6",
+    "mocha": "^3.1.2",
     "node-sass": "^3.8.0",
     "postcss-loader": "^1.0.0",
     "pug": "^2.0.0-beta6",
     "pug-loader": "^2.3.0",
     "raw-loader": "^0.5.1",
     "react": "^15.3.0",
+    "react-addons-test-utils": "^15.3.2",
     "react-dom": "^15.3.0",
     "react-hot-loader": "^3.0.0-beta.1",
     "react-lite": "^0.15.19",
@@ -73,11 +86,14 @@
     "yaml-loader": "^0.4.0"
   },
   "devDependencies": {
+    "babel-cli": "^6.18.0",
+    "denodeify": "^1.2.1",
     "eslint": "^3.8.1",
     "eslint-config-airbnb": "^12.0.0",
     "eslint-loader": "^1.5.0",
     "eslint-plugin-import": "^1.16.0",
     "eslint-plugin-jsx-a11y": "^2.2.3",
-    "eslint-plugin-react": "^6.4.1"
+    "eslint-plugin-react": "^6.4.1",
+    "rimraf": "^2.5.4"
   }
 }

@@ -1,0 +1,11 @@
+@import '/variables.scss';
+.app {
+  position: relative;
+  background: url('./close.png') top left no-repeat;
+  padding: 50px 100px;
+  width: auto;
+  margin: 0 auto;
+}
+.message {
+  color: $color;
+}
