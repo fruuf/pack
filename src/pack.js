@@ -164,10 +164,12 @@ const options = Object.assign({}, tempOptions, { assets: normaliseAssets(tempOpt
 const rawConfig = getConfig(options);
 const config = validate(rawConfig);
 
+
 if (options.test) {
   const mocha = new Mocha();
   setupTest(options);
-  const testFiles = glob.sync('**/*.test.js', {
+  const globPattern = path.join(options.src, '**/*.test.js');
+  const testFiles = glob.sync(globPattern, {
     cwd: options.root,
     ignore: 'node_modules/**',
   });

@@ -1,6 +1,6 @@
 {
   "name": "pack-cli",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "description": "pack cli",
   "bin": {
     "pack": ".bin/pack"
@@ -9,8 +9,7 @@
     "start": "rimraf lib && babel src --out-dir lib --watch",
     "lint": "eslint src/* tests/*",
     "build": "npm run lint && rimraf lib && babel src --out-dir lib",
-    "test": "npm run build && mocha --opts mocha.opts",
-    "publish": "npm run test && npm publish"
+    "test": "npm run build && mocha --opts mocha.opts"
   },
   "keywords": [
     "webpack",

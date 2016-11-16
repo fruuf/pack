@@ -1,29 +1,24 @@
-# pack
-- simple build process cli for JS projects (node and browser)
-- babel (airbnb, react), webpack, sourcemaps and hot-reloading ready to go
-
-## web
-- imports and bundles scripts, stylesheets (sass), images, fonts, svgs and jsx
-- development server with hot reload and component hot reload
-- builds optimised production bundle with assets
-- proxy to sit on top of existing server
-
-## node
-- full es6 support
-- hot-reloading with source maps
-- builds bundle for node v4 and above
+# pack-cli
+bundle and test client and server side javascript with webpack and mocha without configuration
+- compiles JavaScript (React + ES2017), CoffeeScript, Jade, Pug, JSON and yaml
+- bundles sass, less and css with optional css, images, fonts, videos
+- development with (react) hot reloading
+- minified production builds
+- unit tests with mocha, enzyme and ES2017
+- browser (ES5 + css prefixes) and nodeJS as build targets
 
 # get started
 ## install
     npm install pack-cli --save
     yarn add pack-cli
 
-## add package links (package.json)
+## add package scripts in package.json
 
     {
       "scripts": {
         "start": "pack -w",
         "build": "pack",
+        "test": "pack -t",
         "help": "pack -h"
       }
     }
@@ -31,18 +26,3 @@
 # folder structure
     - src
       - main.js
-
-# react
-enable react mode to mount `export default Component` from `src/main` into `#render` or an empty `div`.
-enables component hot reload while preserving state. if a directory `src/components` exists, components can be imported as modules. (`import Component from 'Component';` resolves to `src/components/Component.js`).
-
-## folder structure
-    - src
-      - components
-        - App
-          - index.js
-          - style.scss
-      - main.js
-
-# options
-    pack -h
