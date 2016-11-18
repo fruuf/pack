@@ -1,26 +1,18 @@
 ---
-machine:
-  pre:
-    - mkdir ~/.yarn-cache
-  node:
-    version: stable
-dependencies:
-  pre:
-    - curl -o- -L https://yarnpkg.com/install.sh | bash
-  cache_directories:
-    - ~/.yarn-cache
-  override:
-    - yarn install
 test:
   pre:
-    - yarn run lint
-    - yarn run build
-  override:
-    - yarn run test
+    - npm run lint
+    - npm run build
+
+# dependencies:
+#   pre:
+#     - npm install --dev
+#   override:
+#     - npm install
 
 deployment:
   npm:
     branch: master
     commands:
-      - echo -e "$NPM_USER\n$NPM_PASS\n$NPM_EMAIL" | yarn login
-      - yarn run publish
+      - echo -e "$NPM_USER\n$NPM_PASS\n$NPM_EMAIL" | npm login
+      - npm run publish
