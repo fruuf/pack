@@ -4,12 +4,6 @@ test:
     - npm run lint
     - npm run build
 
-# dependencies:
-#   pre:
-#     - npm install --dev
-#   override:
-#     - npm install
-
 deployment:
   npm:
     branch: master

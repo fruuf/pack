@@ -166,6 +166,11 @@ export default (options) => {
           test: /\.coffee($|\?)/,
           loader: resolve('coffee-loader'),
         },
+        !options.node && {
+          test: /\.(graphql|gql)($|\?)/,
+          exclude: /node_modules/,
+          loader: resolve('graphql-tag/loader'),
+        },
         !options.node && createStyleLoaders(/\.css($|\?(?!global))/, options.cssmodules, 'css'),
         !options.node && createStyleLoaders(/\.css\?global$/, false, 'css'),
         !options.node && createStyleLoaders(/\.scss($|\?(?!global))/, options.cssmodules, 'sass'),

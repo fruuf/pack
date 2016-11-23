@@ -184,6 +184,7 @@ if (options.test) {
     } else {
       // eslint-disable-next-line no-console
       console.error(colors.bold.red(`\n\n\n------ ${failures} tests failed ------`));
+      process.exit(1);
     }
   });
 } else if (options.watch && !options.node) {
@@ -218,6 +219,7 @@ if (options.test) {
       console.error(colors.bold.red(`\n\n\n------ build failed for ${options.src} ------`));
       // eslint-disable-next-line no-console
       console.error(directError.message);
+      process.exit(1);
     } else {
       // eslint-disable-next-line no-console
       console.log(colors.bold.green(`\n\n\n------ build succeeded for ${options.src} ------`));
