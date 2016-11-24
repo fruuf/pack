@@ -4,8 +4,6 @@ import validate from 'webpack-validator';
 import commander from 'commander';
 import path from 'path';
 import jsonfile from 'jsonfile';
-import difference from 'lodash/difference';
-import pick from 'lodash/pick';
 import colors from 'colors/safe';
 import Mocha from 'mocha';
 import fs from 'fs';
@@ -16,114 +14,143 @@ import setupTest from './util/test';
 let fileConfig = {}; // eslint-disable-line no-var
 let fileConfigSuccess = false; // eslint-disable-line no-var
 
-const VALID_OPTIONS = [
-  'watch',
-  'react',
-  'lite',
-  'cssmodules',
-  'node',
-  'flatten',
-  'port',
-  'assets',
-  'src',
-  'test',
-  'main',
-  'dist',
-  'bundle',
-  'proxy',
-  'watchwrite',
-  'resolve',
-  'index',
-  'externals',
-];
+const DEFAULT_OPTIONS = {
+  watch: false,
+  react: false,
+  lite: false,
+  cssmodules: false,
+  node: false,
+  flatten: false,
+  port: '8080',
+  assets: 'assets',
+  src: 'src',
+  test: false,
+  main: 'main',
+  dist: 'dist',
+  bundle: 'bundle',
+  proxy: '',
+  watchwrite: false,
+  resolve: '',
+  index: 'index.html',
+  externals: {},
+};
+
+const VALID_OPTIONS = {
+  watch: true,
+  react: true,
+  lite: true,
+  cssmodules: true,
+  node: true,
+  flatten: true,
+  port: true,
+  assets: true,
+  src: true,
+  test: true,
+  main: true,
+  dist: true,
+  bundle: true,
+  proxy: true,
+  watchwrite: true,
+  resolve: true,
+  index: true,
+  externals: true,
+};
+
+const VALID_FILE_OPTIONS = Object.assign({}, VALID_OPTIONS, {
+  watch: false,
+  test: false,
+  watchwrite: false,
+});
+
+const VALID_CLI_OPTIONS = Object.assign({}, VALID_OPTIONS, {
+  externals: false,
+});
+
+const pick = (data, validOptions) => Object.keys(validOptions).reduce((newData, option) => {
+  if (validOptions[option] && option in data) {
+    return Object.assign({}, newData, { [option]: data[option] });
+  }
+  return newData;
+}, {});
+
+const appendDefault = (option, str) => {
+  let defaultValue = DEFAULT_OPTIONS[option];
+  if (defaultValue === false) defaultValue = 'disabled';
+  if (defaultValue === true) defaultValue = 'enabled';
+  if (typeof (defaultValue) === 'object') defaultValue = '{}';
+  return `${str} [${defaultValue}]`;
+};
 
 commander
   .version(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).version)
   .description('pack a bundle')
   .option(
     '-w, --watch',
-    'hot reload on file change (development)',
-    false
+    appendDefault('watch', 'hot reload on file change (development)'),
   )
   .option(
     '-t, --test',
-    'run tests in test directory (development)',
-    false
+    appendDefault('test', 'run tests in test directory (development)')
   )
   .option(
     '-r, --react',
-    'render "export default <Component />" from sourcefile',
-    false
+    appendDefault('react', 'render "export default <Component />" from sourcefile')
   )
   .option(
     '-l, --lite',
-    'use react lite in build (production)',
-    false
+    appendDefault('lite', 'use react lite in build (production)')
   )
   .option(
     '-c, --cssmodules',
-    'enable css modules',
-    false
+    appendDefault('cssmodules', 'enable css modules')
   )
   .option(
     '-n, --node',
-    'build for nodeJS',
-    false
+    appendDefault('node', 'build for nodeJS')
   )
   .option(
     '-f, --flatten',
-    'prevent subfolders in output',
-    false
+    appendDefault('flatten', 'prevent subfolders in output')
   )
   .option(
     '-p, --port [number]',
-    'port number for development server (development) [8080]',
-    8080
+    appendDefault('port', 'port number for development server (development)')
   )
   .option(
     '-a, --assets [directory]',
-    'assets directory on server [assets]',
-    'assets'
+    appendDefault('assets', 'assets directory on server')
   )
   .option(
     '-s, --src [directory]',
-    'source directory [src]',
-    'src'
+    appendDefault('src', 'source directory')
   )
   .option(
     '-m, --main [filename]',
-    'source filename in src [main]',
-    'main'
+    appendDefault('main', 'source filename in src')
   )
   .option(
     '-d, --dist [directory]',
-    'output directory [dist]',
-    'dist'
+    appendDefault('dist', 'output directory')
   )
   .option(
     '-b, --bundle [filename]',
-    'output filename in dist [bundle]',
-    'bundle'
+    appendDefault('bundle', 'output filename in dist')
   )
   .option(
     '--proxy [proxy/address]',
-    'proxy port or address for development server (development) []',
-    ''
+    appendDefault('proxy', 'proxy port or address for development server (development)')
   )
   .option(
     '--watchwrite',
-    'write bundle on file change in (development)',
-    false
+    appendDefault('watchwrite', 'write bundle on file change in (development)')
   )
   .option(
     '--resolve [extensions]',
-    'resolve extensions other than .js, .json, .coffee []'
-    , ''
+    appendDefault('resolve', 'resolve extensions other than .js, .json, .coffee')
   )
   .option(
     '--index [filename]',
-    'html entry file in src [index.html]',
-    'index.html'
+    appendDefault('index', 'html entry file in src')
   )
   .parse(process.argv);
 
@@ -141,10 +168,10 @@ const attemptFileConfig = (fileName) => {
   }
 };
 
-attemptFileConfig(path.join(process.cwd(), commander.src, 'pack.json'));
+attemptFileConfig(path.join(process.cwd(), commander.src || 'src', 'pack.json'));
 attemptFileConfig(path.join(process.cwd(), 'pack.json'));
 
-const invalidFileOptions = difference(Object.keys(fileConfig), VALID_OPTIONS);
+const invalidFileOptions = Object.keys(fileConfig).filter(option => !VALID_OPTIONS[option]);
 if (invalidFileOptions.length) {
   throw new Error(`Invalid file options provided: ${invalidFileOptions.join(', ')}`);
 }
@@ -155,9 +182,13 @@ const normaliseAssets = (assets) => {
   return `${cleanUrl[0] === '/' ? '' : '/'}${cleanUrl}/`;
 };
 
+const fileOptions = pick(fileConfig, VALID_FILE_OPTIONS);
+const cliOptions = pick(commander, VALID_CLI_OPTIONS);
 const tempOptions = Object.assign(
-  pick(commander, VALID_OPTIONS),
-  pick(fileConfig, VALID_OPTIONS),
+  {},
+  DEFAULT_OPTIONS,
+  fileOptions,
+  cliOptions,
   { root: process.cwd() }
 );
 const options = Object.assign({}, tempOptions, { assets: normaliseAssets(tempOptions.assets) });
@@ -168,7 +199,7 @@ const config = validate(rawConfig);
 if (options.test) {
   const mocha = new Mocha();
   setupTest(options);
-  const globPattern = path.join(options.src, '**/*.test.js');
+  const globPattern = path.join(options.src, '**/*test.js');
   const testFiles = glob.sync(globPattern, {
     cwd: options.root,
     ignore: 'node_modules/**',

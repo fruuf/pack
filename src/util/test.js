@@ -1,6 +1,7 @@
 import jsdom from 'jsdom-global';
 import chai, { expect } from 'chai';
 import chaiEnzyme from 'chai-enzyme';
+import chaiPromise from 'chai-as-promised';
 import register from 'babel-register';
 import { mount } from 'enzyme';
 import 'ignore-styles';
@@ -23,6 +24,8 @@ export default (options) => {
       [require.resolve('babel-root-slash-import'), { rootPathSuffix: options.src }],
     ],
   });
+
+  chai.use(chaiPromise);
 
   if (options.react) {
     global.mount = mount;
