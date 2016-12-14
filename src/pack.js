@@ -90,67 +90,67 @@ commander
   )
   .option(
     '-t, --test',
-    appendDefault('test', 'run tests in test directory (development)')
+    appendDefault('test', 'run tests in test directory (development)'),
   )
   .option(
     '-r, --react',
-    appendDefault('react', 'render "export default <Component />" from sourcefile')
+    appendDefault('react', 'render "export default <Component />" from sourcefile'),
   )
   .option(
     '-l, --lite',
-    appendDefault('lite', 'use react lite in build (production)')
+    appendDefault('lite', 'use react lite in build (production)'),
   )
   .option(
     '-c, --cssmodules',
-    appendDefault('cssmodules', 'enable css modules')
+    appendDefault('cssmodules', 'enable css modules'),
   )
   .option(
     '-n, --node',
-    appendDefault('node', 'build for nodeJS')
+    appendDefault('node', 'build for nodeJS'),
   )
   .option(
     '-f, --flatten',
-    appendDefault('flatten', 'prevent subfolders in output')
+    appendDefault('flatten', 'prevent subfolders in output'),
   )
   .option(
     '-p, --port [number]',
-    appendDefault('port', 'port number for development server (development)')
+    appendDefault('port', 'port number for development server (development)'),
   )
   .option(
     '-a, --assets [directory]',
-    appendDefault('assets', 'assets directory on server')
+    appendDefault('assets', 'assets directory on server'),
   )
   .option(
     '-s, --src [directory]',
-    appendDefault('src', 'source directory')
+    appendDefault('src', 'source directory'),
   )
   .option(
     '-m, --main [filename]',
-    appendDefault('main', 'source filename in src')
+    appendDefault('main', 'source filename in src'),
   )
   .option(
     '-d, --dist [directory]',
-    appendDefault('dist', 'output directory')
+    appendDefault('dist', 'output directory'),
   )
   .option(
     '-b, --bundle [filename]',
-    appendDefault('bundle', 'output filename in dist')
+    appendDefault('bundle', 'output filename in dist'),
   )
   .option(
     '--proxy [proxy/address]',
-    appendDefault('proxy', 'proxy port or address for development server (development)')
+    appendDefault('proxy', 'proxy port or address for development server (development)'),
   )
   .option(
     '--watchwrite',
-    appendDefault('watchwrite', 'write bundle on file change in (development)')
+    appendDefault('watchwrite', 'write bundle on file change in (development)'),
   )
   .option(
     '--resolve [extensions]',
-    appendDefault('resolve', 'resolve extensions other than .js, .json, .coffee')
+    appendDefault('resolve', 'resolve extensions other than .js, .json, .coffee'),
   )
   .option(
     '--index [filename]',
-    appendDefault('index', 'html entry file in src')
+    appendDefault('index', 'html entry file in src'),
   )
   .parse(process.argv);
 
@@ -189,7 +189,7 @@ const tempOptions = Object.assign(
   DEFAULT_OPTIONS,
   fileOptions,
   cliOptions,
-  { root: process.cwd() }
+  { root: process.cwd() },
 );
 const options = Object.assign({}, tempOptions, { assets: normaliseAssets(tempOptions.assets) });
 const rawConfig = getConfig(options);
@@ -211,7 +211,7 @@ if (options.test) {
   mocha.run((failures) => {
     if (failures === 0) {
       // eslint-disable-next-line no-console
-      console.log(colors.bold.green(`\n\n\n------ tests passed ------`));
+      console.log(colors.bold.green('\n\n\n------ tests passed ------'));
     } else {
       // eslint-disable-next-line no-console
       console.error(colors.bold.red(`\n\n\n------ ${failures} tests failed ------`));

@@ -19,9 +19,9 @@ if (process.env.NODE_ENV === 'production') {
     React.createElement(
       AppContainer,
       null,
-      React.createElement(App, null)
+      React.createElement(App, null),
     ),
-    renderTarget
+    renderTarget,
   );
 
   if (module.hot) {
@@ -33,9 +33,9 @@ if (process.env.NODE_ENV === 'production') {
         React.createElement(
           AppContainer,
           null,
-          React.createElement(NewApp, null)
+          React.createElement(NewApp, null),
         ),
-        renderTarget
+        renderTarget,
       );
     });
   }

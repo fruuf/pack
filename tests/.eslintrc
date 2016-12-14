@@ -2,5 +2,8 @@
   "globals": {
     "expect": true,
     "pack": true
+  },
+  "rules": {
+    "func-names": 0
   }
 }

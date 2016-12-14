@@ -1,4 +1,12 @@
 ---
+machine:
+  post:
+    - npm install -g yarn
+
+dependencies:
+  override:
+    - yarn install
+
 test:
   pre:
     - npm run lint
