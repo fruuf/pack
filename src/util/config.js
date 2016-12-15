@@ -110,7 +110,7 @@ export default (options) => {
     externals: options.node ? nodeModules : (options.externals || {}),
     context: options.root,
     resolve: {
-      extensions: ['', '.js', '.json', '.coffee'].concat(additionalExtensions),
+      extensions: ['', '.js', '.jsx', '.json', '.coffee'].concat(additionalExtensions),
       fallback: [
         options.react && ensureExists(path.join(options.root, options.src, 'components')),
         ensureExists(path.join(__dirname, '../node_modules')),
@@ -130,7 +130,7 @@ export default (options) => {
     module: {
       loaders: [
         {
-          test: /\.js($|\?)/,
+          test: /\.jsx?($|\?)/,
           loader: resolve('babel-loader'),
           exclude: /node_modules/,
           query: {
