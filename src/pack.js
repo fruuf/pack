@@ -8,6 +8,7 @@ import colors from 'colors/safe';
 import Mocha from 'mocha';
 import fs from 'fs';
 import glob from 'glob';
+import mkdirp from 'mkdirp';
 import getConfig from './util/config';
 import setupTest from './util/test';
 
@@ -252,6 +253,14 @@ if (options.test) {
       console.error(directError.message);
       process.exit(1);
     } else {
+      if (options.watchwrite) {
+        const styleFilename = path.join(options.root, options.dist, (!options.flatten && 'css') || '', `${options.bundle}.css`);
+        mkdirp.sync(path.dirname(styleFilename));
+        fs.writeFileSync(styleFilename, '/* css gets only generated for production bundle */', {
+          encoding: 'utf8',
+          flag: 'w',
+        });
+      }
       // eslint-disable-next-line no-console
       console.log(colors.bold.green(`\n\n\n------ build succeeded for ${options.src} ------`));
       // eslint-disable-next-line no-console

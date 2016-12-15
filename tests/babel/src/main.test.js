@@ -3,9 +3,9 @@
 import { getRepos, getRest, Greeting } from './util';
 
 describe('babel', () => {
-  it('fetches repos', async () => {
-    const repos = await getRepos();
-    expect(repos).to.be.an('array');
+  // eventually uses chai-as-promised
+  it('fetches repos', () => {
+    expect(getRepos()).to.eventually.be.an('array');
   });
   it('supports the object rest', () => {
     const rest = getRest({ a: 1, b: 2, c: 3 });
