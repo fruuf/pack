@@ -1,4 +1,4 @@
 --require tests/globals.js
-tests/**/*.test.js
+tests/*/*.test.js
 --compilers js:babel-register
 --recursive

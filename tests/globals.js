@@ -20,4 +20,9 @@ const pack = async (cwd, args) => {
   const stats = jsonfile.readFileSync(path.join(tempDir, 'stats.json'));
   return stats;
 };
+const packTest = (cwd, args) => denodeify(
+  childProcess.exec,
+  (err, stdout, stderr) => ([null, !(err || stderr)]),
+)(`${packExecutable} ${args} -t`, { cwd });
 global.pack = pack;
+global.packTest = packTest;

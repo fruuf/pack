@@ -1,7 +1,8 @@
 {
   "globals": {
     "expect": true,
-    "pack": true
+    "pack": true,
+    "packTest": true
   },
   "rules": {
     "func-names": 0

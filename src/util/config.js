@@ -6,20 +6,7 @@ import fs from 'fs';
 import autoprefixer from 'autoprefixer';
 import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
 import findCacheDir from 'find-cache-dir';
-
-const ensureExists = (fn) => {
-  try {
-    fs.statSync(fn);
-    return fn;
-  } catch (e) {
-    return false;
-  }
-};
-
-const nodePaths = (process.env.NODE_PATH || '')
-  .split(process.platform === 'win32' ? ';' : ':')
-  .filter(Boolean)
-  .map(p => path.resolve(p));
+import { ensureExists, nodePaths, resolve, babelPlugins } from './util';
 
 export default (options) => {
   const hostname = (process.env.C9_HOSTNAME && `http://${process.env.C9_HOSTNAME}`) || `http://localhost:${options.port}/`;
@@ -55,15 +42,6 @@ export default (options) => {
     }
     : {};
 
-  const resolve = (loader, queryParts) => {
-    // eslint-disable-next-line no-param-reassign
-    if (!queryParts) queryParts = [];
-    const loaderPath = require.resolve(loader);
-    const query = queryParts
-      .filter(Boolean)
-      .join('&');
-    return `${loaderPath}${query ? `?${query}` : ''}`;
-  };
 
   const createStyleLoaders = (test, modulesMode, compile) => {
     // eslint-disable-next-line no-var
@@ -133,25 +111,9 @@ export default (options) => {
           test: /\.jsx?($|\?)/,
           loader: resolve('babel-loader'),
           exclude: /node_modules/,
-          query: {
-            babelrc: false,
+          query: babelPlugins(options, {
             cacheDirectory: (options.watch || options.watchwrite) && findCacheDir({ name: 'pack' }),
-            presets: [
-              resolve('babel-preset-react'),
-              resolve('babel-preset-es2015'),
-              resolve('babel-preset-es2016'),
-              resolve('babel-preset-es2017'),
-            ],
-            plugins: [
-              [resolve('babel-root-slash-import'), { rootPathSuffix: options.src }],
-              resolve('babel-plugin-transform-runtime'),
-              resolve('babel-plugin-transform-decorators-legacy'),
-              resolve('babel-plugin-transform-class-properties'),
-              resolve('babel-plugin-transform-function-bind'),
-              resolve('babel-plugin-transform-object-rest-spread'),
-              (options.react && options.watch && !options.node) && resolve('react-hot-loader/babel'),
-            ].filter(Boolean),
-          },
+          }),
         },
         {
           test: /\.json($|\?)/,

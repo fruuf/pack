@@ -5,4 +5,9 @@ describe('react + sass', () => {
     const result = await pack(__dirname, '-r');
     expect(result).to.be.an('object');
   });
+  it('runs the unit tests', async function () {
+    this.timeout(60000);
+    const result = await packTest(__dirname, '-r');
+    expect(result).to.equal(true);
+  });
 });

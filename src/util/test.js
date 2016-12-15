@@ -5,25 +5,13 @@ import chaiPromise from 'chai-as-promised';
 import register from 'babel-register';
 import { mount } from 'enzyme';
 import 'ignore-styles';
+import { babelPlugins } from './util';
 
 export default (options) => {
   global.expect = expect;
-  register({
+  register(babelPlugins(options, {
     ignore: /node_modules/,
-    babelrc: false,
-    presets: [
-      require.resolve('babel-preset-react'),
-      require.resolve('babel-preset-es2015'),
-      require.resolve('babel-preset-es2016'),
-      require.resolve('babel-preset-es2017'),
-    ],
-    plugins: [
-      require.resolve('babel-plugin-transform-runtime'),
-      require.resolve('babel-plugin-transform-es2015-destructuring'),
-      require.resolve('babel-plugin-transform-object-rest-spread'),
-      [require.resolve('babel-root-slash-import'), { rootPathSuffix: options.src }],
-    ],
-  });
+  }));
 
   chai.use(chaiPromise);
 
