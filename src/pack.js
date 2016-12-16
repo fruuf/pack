@@ -30,6 +30,7 @@ const DEFAULT_OPTIONS = {
   dist: 'dist',
   bundle: 'bundle',
   proxy: '',
+  secure: false,
   watchwrite: false,
   resolve: '',
   index: 'index.html',
@@ -51,6 +52,7 @@ const VALID_OPTIONS = {
   dist: true,
   bundle: true,
   proxy: true,
+  secure: true,
   watchwrite: true,
   resolve: true,
   index: true,
@@ -140,6 +142,10 @@ commander
   .option(
     '--proxy [proxy/address]',
     appendDefault('proxy', 'proxy port or address for development server (development)'),
+  )
+  .option(
+    '--secure',
+    appendDefault('secure', 'run the dev server as https and proxy to a https server if enabled (development)'),
   )
   .option(
     '--watchwrite',
@@ -234,10 +240,15 @@ if (options.test) {
     hot: true,
     inline: true,
     historyApiFallback: !options.proxy && { index: path.join(options.assets, 'index.html') },
+    https: Boolean(options.secure),
     proxy: options.proxy
-      ? { '**': String(options.proxy).match(/^\d+$/)
-        ? `http://localhost:${options.proxy}`
-        : String(options.proxy),
+      ? {
+        '**': {
+          target: String(options.proxy).match(/^\d+$/)
+            ? `http${options.secure ? 's' : ''}://localhost:${options.proxy}`
+            : String(options.proxy),
+          secure: false, // lets ignore self-signed certs
+        },
       }
       : {},
   });
