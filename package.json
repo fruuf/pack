@@ -1,6 +1,6 @@
 {
   "name": "pack-cli",
-  "version": "1.1.11",
+  "version": "1.2.0",
   "description": "pack cli",
   "bin": {
     "pack": ".bin/pack"
@@ -10,7 +10,7 @@
     "lint": "eslint src/* tests/*",
     "build": "rimraf lib && babel src --out-dir lib",
     "test": "mocha --opts mocha.opts",
-    "publish": "publish"
+    "release": "echo -e \"$NPM_USER\n$NPM_PASS\n$NPM_EMAIL\" | npm login && npm publish"
   },
   "keywords": [
     "webpack",
@@ -56,6 +56,9 @@
     "colors": "^1.1.2",
     "commander": "^2.9.0",
     "css-loader": "^0.26.1",
+    "elm": "^0.18.0",
+    "elm-hot-loader": "^0.5.3",
+    "elm-webpack-loader": "^4.0.0",
     "enzyme": "^2.6.0",
     "extract-text-webpack-plugin": "^1.0.1",
     "file-loader": "^0.9.0",
@@ -102,7 +105,6 @@
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-jsx-a11y": "^2.2.1",
     "eslint-plugin-react": "^6.8.0",
-    "publish": "^0.6.0",
     "rimraf": "^2.5.4"
   }
 }

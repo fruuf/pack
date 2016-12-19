@@ -88,7 +88,7 @@ export default (options) => {
     externals: options.node ? nodeModules : (options.externals || {}),
     context: options.root,
     resolve: {
-      extensions: ['', '.js', '.jsx', '.json', '.coffee'].concat(additionalExtensions),
+      extensions: ['', '.js', '.jsx', '.json', '.coffee', '.elm'].concat(additionalExtensions),
       fallback: [
         options.react && ensureExists(path.join(options.root, options.src, 'components')),
         ensureExists(path.join(__dirname, '../node_modules')),
@@ -129,6 +129,17 @@ export default (options) => {
         {
           test: /\.coffee($|\?)/,
           loader: resolve('coffee-loader'),
+        },
+        {
+          test: /\.elm$/,
+          exclude: [/elm-stuff/, /node_modules/],
+          loaders: [
+            resolve('elm-hot-loader'),
+            resolve('elm-webpack-loader', [
+              'warn=true',
+              `cwd=${path.join(options.root)}`,
+            ]),
+          ],
         },
         !options.node && {
           test: /\.(graphql|gql)($|\?)/,
