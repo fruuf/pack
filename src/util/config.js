@@ -6,6 +6,8 @@ import fs from 'fs';
 import autoprefixer from 'autoprefixer';
 import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
 import findCacheDir from 'find-cache-dir';
+import jsonfile from 'jsonfile';
+import loadEnvFile from 'node-env-file';
 import { ensureExists, nodePaths, resolve, babelPlugins } from './util';
 
 export default (options) => {
@@ -18,6 +20,43 @@ export default (options) => {
   const imagesPrefix = options.flatten ? '' : 'images/';
   const fontsPrefix = options.flatten ? '' : 'fonts/';
   const mediaPrefix = options.flatten ? '' : 'media/';
+
+  let environment = {};
+  if (options.env) {
+    let envFile = '';
+    if (path.isAbsolute(options.env)) {
+      envFile = ensureExists(options.env);
+    } else {
+      envFile = [
+        path.join(options.root, options.src, options.env),
+        path.join(options.root, options.env),
+      ].map(ensureExists).filter(Boolean)[0] || '';
+    }
+
+    if (!envFile) {
+      throw new Error(`env file ${options.env} not found`);
+    } else if (path.extname(envFile).toLowerCase() === '.json') {
+      try {
+        environment = jsonfile.readFileSync(envFile);
+      } catch (e) {
+        throw new Error(`invalid json in ${envFile}`);
+      }
+    } else {
+      try {
+        environment = loadEnvFile(envFile, { raise: true });
+      } catch (e) {
+        throw new Error(`bad format in ${envFile}`);
+      }
+    }
+  }
+
+
+  const mergeEnvironment = envBase => Object.assign(
+    Object.keys(environment).reduce((acc, cur) => Object.assign(acc, {
+      [`process.env.${cur}`]: JSON.stringify(environment[cur]),
+    }), {}),
+    envBase,
+  );
 
   const nodeModules = {};
   if (options.node) {
@@ -200,9 +239,9 @@ export default (options) => {
     plugins: [
       new webpack.NoErrorsPlugin(),
       options.watch && !options.watchwrite && new webpack.HotModuleReplacementPlugin(),
-      (options.watch || options.watchwrite) && new webpack.DefinePlugin({
+      (options.watch || options.watchwrite) && new webpack.DefinePlugin(mergeEnvironment({
         'process.env.NODE_ENV': JSON.stringify('development'),
-      }),
+      })),
       !(options.watch || options.watchwrite) && new webpack.optimize.OccurenceOrderPlugin(),
       !(options.watch || options.watchwrite) && new webpack.optimize.DedupePlugin(),
       (
@@ -222,9 +261,9 @@ export default (options) => {
         },
       }),
       (!options.node && !(options.watch || options.watchwrite)) && new ExtractTextPlugin(`${cssPrefix}${options.bundle}.css`),
-      !(options.watch || options.watchwrite) && new webpack.DefinePlugin({
+      !(options.watch || options.watchwrite) && new webpack.DefinePlugin(mergeEnvironment({
         'process.env.NODE_ENV': JSON.stringify('production'),
-      }),
+      })),
       (
         !options.node &&
         ((options.watch || options.watchwrite) || templateOptions.template) &&

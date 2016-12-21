@@ -29,6 +29,7 @@ const DEFAULT_OPTIONS = {
   main: 'main',
   dist: 'dist',
   bundle: 'bundle',
+  env: '',
   proxy: '',
   secure: false,
   watchwrite: false,
@@ -50,6 +51,7 @@ const VALID_OPTIONS = {
   test: true,
   main: true,
   dist: true,
+  env: true,
   bundle: true,
   proxy: true,
   secure: true,
@@ -138,6 +140,10 @@ commander
   .option(
     '-b, --bundle [filename]',
     appendDefault('bundle', 'output filename in dist'),
+  )
+  .option(
+    '--env [filename]',
+    appendDefault('env', 'provide a file with environment variables'),
   )
   .option(
     '--proxy [proxy/address]',

@@ -1,6 +1,6 @@
 {
   "name": "pack-cli",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "pack cli",
   "bin": {
     "pack": ".bin/pack"
@@ -77,6 +77,7 @@
     "lodash": "^4.16.6",
     "mkdirp": "^0.5.1",
     "mocha": "^3.1.2",
+    "node-env-file": "^0.1.8",
     "node-sass": "^3.13.1",
     "postcss-loader": "^1.0.0",
     "pug": "^2.0.0-beta6",
