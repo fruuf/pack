@@ -127,7 +127,7 @@ export default (options) => {
     externals: options.node ? nodeModules : (options.externals || {}),
     context: options.root,
     resolve: {
-      extensions: ['', '.js', '.jsx', '.json', '.coffee', '.elm'].concat(additionalExtensions),
+      extensions: ['', '.js', '.jsx', '.json', '.coffee'].concat(additionalExtensions),
       fallback: [
         options.react && ensureExists(path.join(options.root, options.src, 'components')),
         ensureExists(path.join(__dirname, '../node_modules')),
@@ -176,6 +176,7 @@ export default (options) => {
             resolve('elm-hot-loader'),
             resolve('elm-webpack-loader', [
               'warn=true',
+              (options.watch || options.watchwrite) && 'debug=true',
               `cwd=${path.join(options.root)}`,
             ]),
           ],

@@ -1,13 +1,13 @@
 {
   "name": "pack-cli",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "pack cli",
   "bin": {
     "pack": ".bin/pack"
   },
   "scripts": {
     "start": "rimraf lib && babel src --out-dir lib --watch",
-    "lint": "eslint src/* tests/*",
+    "lint": "eslint src tests",
     "build": "rimraf lib && babel src --out-dir lib",
     "test": "mocha --opts mocha.opts"
   },
@@ -18,7 +18,8 @@
     "react",
     "less",
     "react-lite",
-    "mocha"
+    "mocha",
+    "elm"
   ],
   "author": "fruuf",
   "license": "MIT",
