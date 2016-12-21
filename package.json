@@ -9,8 +9,7 @@
     "start": "rimraf lib && babel src --out-dir lib --watch",
     "lint": "eslint src/* tests/*",
     "build": "rimraf lib && babel src --out-dir lib",
-    "test": "mocha --opts mocha.opts",
-    "release": "echo -e \"$NPM_USER\n$NPM_PASS\n$NPM_EMAIL\" | npm login && npm publish"
+    "test": "mocha --opts mocha.opts"
   },
   "keywords": [
     "webpack",
