@@ -260,7 +260,7 @@ if (options.test) {
   });
   server.listen(options.port, '0.0.0.0');
   // eslint-disable-next-line no-console
-  console.log(`http://localhost:${options.port}`);
+  console.log(`http${options.secure ? 's' : ''}://localhost:${options.port}`);
 } else {
   webpack(config, (directError, stats) => {
     if (directError) {
