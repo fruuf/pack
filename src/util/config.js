@@ -169,18 +169,6 @@ export default (options) => {
           test: /\.coffee($|\?)/,
           loader: resolve('coffee-loader'),
         },
-        {
-          test: /\.elm$/,
-          exclude: [/elm-stuff/, /node_modules/],
-          loaders: [
-            resolve('elm-hot-loader'),
-            resolve('elm-webpack-loader', [
-              'warn=true',
-              (options.watch || options.watchwrite) && 'debug=true',
-              `cwd=${path.join(options.root)}`,
-            ]),
-          ],
-        },
         !options.node && {
           test: /\.(graphql|gql)($|\?)/,
           exclude: /node_modules/,
