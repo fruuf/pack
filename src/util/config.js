@@ -300,7 +300,7 @@ export default (options) => {
         },
       ].filter(Boolean),
     },
-    devtool: ((options.watch || options.watchwrite) && 'inline-source-map') || 'source-map',
+    devtool: ((options.watch || options.watchwrite) && 'cheap-module-eval-source-map') || 'source-map',
     plugins: [
       (options.watch || options.watchwrite) && new webpack.HotModuleReplacementPlugin(),
       (options.watch || options.watchwrite) && new webpack.NamedModulesPlugin(),
