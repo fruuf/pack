@@ -1,6 +1,5 @@
 import webpack from 'webpack';
 import WebpackDevServer from 'webpack-dev-server';
-import validate from 'webpack-validator';
 import commander from 'commander';
 import path from 'path';
 import jsonfile from 'jsonfile';
@@ -205,9 +204,7 @@ const tempOptions = Object.assign(
   { root: process.cwd() },
 );
 const options = Object.assign({}, tempOptions, { assets: normaliseAssets(tempOptions.assets) });
-const rawConfig = getConfig(options);
-const config = validate(rawConfig);
-
+const config = getConfig(options);
 
 if (options.test) {
   const mocha = new Mocha();

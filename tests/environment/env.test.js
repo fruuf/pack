@@ -1,8 +1,17 @@
-
 describe('env', () => {
-  it('inlines environment variables', async function () {
+  let result;
+  before(async function () {
     this.timeout(120000);
-    const result = await pack(__dirname, '');
-    expect(result).to.be.an('object');
+    result = await pack(__dirname, '--env .env');
+  });
+
+  it('builds project', async () => {
+    const files = await result('stats.json');
+    expect(files).to.have.lengthOf(1);
+  });
+
+  it('replaces placeholders', async () => {
+    const [{ content }] = await result('**/*.js');
+    expect(content).to.contain('UNIQID2');
   });
 });

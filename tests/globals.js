@@ -3,10 +3,14 @@ import path from 'path';
 import denodeify from 'denodeify';
 import childProcess from 'child_process';
 import rimraf from 'rimraf';
-import jsonfile from 'jsonfile';
-import { expect } from 'chai';
+import chai from 'chai';
+import chaiThings from 'chai-things';
+import glob from 'glob';
+import fs from 'fs';
 
-global.expect = expect;
+chai.use(chaiThings);
+
+global.expect = chai.expect;
 
 const rm = denodeify(rimraf);
 const tempDir = path.join(__dirname, '..', '.tmp');
@@ -17,8 +21,22 @@ const pack = async (cwd, args) => {
   const relativeDir = path.relative(cwd, tempDir);
   const result = await exec(`${packExecutable} ${args} -d ${relativeDir}`, { cwd });
   if (result[1]) throw new Error(result[1]);
-  const stats = jsonfile.readFileSync(path.join(tempDir, 'stats.json'));
-  return stats;
+  return globPattern => new Promise((resolve, reject) => {
+    glob(globPattern, {
+      cwd: tempDir,
+      root: tempDir,
+    }, (err, files) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(
+          files.map(name => ({
+            name, content: fs.readFileSync(path.join(tempDir, name), { encoding: 'utf8' }),
+          })),
+        );
+      }
+    });
+  });
 };
 const packTest = (cwd, args) => denodeify(
   childProcess.exec,

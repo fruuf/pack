@@ -8,19 +8,24 @@ import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
 import findCacheDir from 'find-cache-dir';
 import jsonfile from 'jsonfile';
 import loadEnvFile from 'node-env-file';
-import { ensureExists, nodePaths, resolve, babelPlugins } from './util';
+import { ensureExists, nodePaths, babelPlugins } from './util';
 
+// takes options as an argument (ether derived from CLI or pack.json) and returns webpack options
 export default (options) => {
-  const hostname = (process.env.C9_HOSTNAME && `http://${process.env.C9_HOSTNAME}`) || `http://localhost:${options.port}/`;
-  const saveRootPath = encodeURIComponent(path.join(options.root, options.src));
+  // we want to allow cloud9 out of the box and support https
+  const hostname = (process.env.C9_HOSTNAME && `http://${process.env.C9_HOSTNAME}`) || `http${options.secure ? 's' : ''}://localhost:${options.port}/`;
+
+  // passing extensions via CLI can be a bit weird, we normalise them here
   const additionalExtensions = ((options.resolve || '').match(/[\w\d]+/g) || []).map(ext => `.${ext}`);
 
+  // we have quite a few options to alter how the output looks, we group them here
   const jsPrefix = options.flatten ? '' : 'js/';
   const cssPrefix = options.flatten ? '' : 'css/';
   const imagesPrefix = options.flatten ? '' : 'images/';
   const fontsPrefix = options.flatten ? '' : 'fonts/';
   const mediaPrefix = options.flatten ? '' : 'media/';
 
+  // to inject keys etc into a client bundle webpack replaces process.env.[NAME] when provided
   let environment = {};
   if (options.env) {
     let envFile = '';
@@ -50,7 +55,6 @@ export default (options) => {
     }
   }
 
-
   const mergeEnvironment = envBase => Object.assign(
     Object.keys(environment).reduce((acc, cur) => Object.assign(acc, {
       [`process.env.${cur}`]: JSON.stringify(environment[cur]),
@@ -58,6 +62,7 @@ export default (options) => {
     envBase,
   );
 
+  // we need all installed node modules to prevent webpack from including them into a server bundle
   const nodeModules = {};
   if (options.node) {
     [
@@ -74,6 +79,8 @@ export default (options) => {
       });
     });
   }
+
+  // we use a webpack plugin to serve some basic html to include scripts and bootstrap react
   const templateOptions = ensureExists(path.join(options.root, options.src, options.index))
     ? {
       template: path.join(options.root, options.src, options.index),
@@ -82,38 +89,70 @@ export default (options) => {
     : {};
 
 
-  const createStyleLoaders = (test, modulesMode, compile) => {
-    // eslint-disable-next-line no-var
-    var compiler = false;
-    if (compile === 'sass') compiler = resolve('sass-loader', [`root=${saveRootPath}`]);
-    if (compile === 'less') compiler = resolve('less-loader', [`root=${saveRootPath}`]);
-    const result = { test };
-    const innerStack = [
-      resolve('css-loader', [
-        modulesMode && 'modules',
-        (modulesMode && (options.watch || options.watchwrite)) && 'localIdentName=[name]__[local]___[hash:base64:5]',
-        '-autoprefixer',
-        `root=${saveRootPath}`,
-        'importLoaders=1',
-      ]),
-      resolve('postcss-loader'),
-      compiler,
-    ].filter(Boolean);
-    if (options.watch || options.watchwrite) {
-      result.loaders = [resolve('style-loader')].concat(innerStack);
-    } else {
-      result.loader = ExtractTextPlugin.extract(innerStack);
+  const createStyleLoaders = (extension, parser = false) => {
+    // creates the stack of loaders to parse less/sass/css and prefix it
+    const getInnerLoaders = cssModules => ([
+      {
+        loader: 'css-loader',
+        options: {
+          modules: cssModules,
+          localIdentName: '[name]__[local]___[hash:base64:5]',
+          autoprefixer: false,
+          root: path.join(options.root, options.src),
+          importLoaders: 1,
+        },
+      },
+      { loader: 'postcss-loader' },
+      (parser) && {
+        loader: `${parser}-loader`,
+        options: {
+          root: path.join(options.root, options.src),
+        },
+      },
+    ].filter(Boolean));
+
+    // wraps the inner stack for development (embedded) and productiobn (extract into css file)
+    const wrapInnerLoaders = (test, cssModules) => {
+      const result = { test };
+      if (options.watch || options.watchwrite) {
+        result.use = [{ loader: 'style-loader' }].concat(getInnerLoaders(cssModules));
+      } else {
+        result.loader = ExtractTextPlugin.extract({
+          fallbackLoader: 'style-loader',
+          // ExtractTextPlugino only supports query, not options
+          loader: getInnerLoaders(cssModules).map(
+            loader => Object.assign({}, loader, { query: loader.options }),
+          ),
+        });
+      }
+      return result;
+    };
+
+    // allows bypassing css modules with .global.css
+    if (options.cssmodules) {
+      return { oneOf: [
+        wrapInnerLoaders(new RegExp(`\\.global\\.${extension}$`, 'i'), false),
+        wrapInnerLoaders(new RegExp(`\\.${extension}$`, 'i'), true),
+      ] };
     }
-    return result;
+    return wrapInnerLoaders(new RegExp(`\\.${extension}$`, 'i'), false);
+  };
+
+  // webpack 2 resolves modules relative to its root (context), so we need to convert them
+  const ensureExistsRelative = (fn) => {
+    const existingFn = ensureExists(fn);
+    if (!existingFn) return '';
+    const relativeFn = path.relative(options.root, existingFn);
+    return relativeFn;
   };
 
   return {
     entry: [
-      (options.node && options.watch) && resolve('webpack/hot/poll', ['1000']),
-      (!options.node && options.watch && !options.watchwrite) && resolve('react-hot-loader/patch'),
-      (!options.node && options.watch && !options.watchwrite) && resolve('webpack-dev-server/client', [hostname]),
-      (!options.node && options.watch && !options.watchwrite) && resolve('webpack/hot/dev-server'),
-      !options.node && resolve('whatwg-fetch'),
+      (options.node && options.watch) && 'webpack/hot/poll?1000',
+      (!options.node && options.watch && !options.watchwrite) && 'react-hot-loader/patch',
+      (!options.node && options.watch && !options.watchwrite) && `webpack-dev-server/client?${hostname}`,
+      (!options.node && options.watch && !options.watchwrite) && 'webpack/hot/dev-server',
+      !options.node && 'whatwg-fetch',
       (options.node || !options.react) && path.join(options.root, options.src, options.main),
       (!options.node && options.react) && path.join(__dirname, 'react'),
     ].filter(Boolean),
@@ -126,113 +165,167 @@ export default (options) => {
     target: options.node ? 'node' : 'web',
     externals: options.node ? nodeModules : (options.externals || {}),
     context: options.root,
+    resolveLoader: {
+      modules: [
+        // for development or global install we want to resolve pack-cli node_modules as well
+        ensureExistsRelative(path.join(__dirname, '..', 'node_modules')),
+        ensureExistsRelative(path.join(__dirname, '..', '..', 'node_modules')),
+        'node_modules',
+      ].filter(Boolean),
+    },
     resolve: {
-      extensions: ['', '.js', '.jsx', '.json', '.coffee'].concat(additionalExtensions),
-      fallback: [
+      extensions: ['.js', '.jsx', '.json', '.coffee'].concat(additionalExtensions),
+      modules: [
+        // allows to resolve react components as first class modules
         options.react && ensureExists(path.join(options.root, options.src, 'components')),
-        ensureExists(path.join(__dirname, '../node_modules')),
-        ensureExists(path.join(__dirname, '../../node_modules')),
-      ].filter(Boolean).concat(nodePaths),
+        ensureExistsRelative(path.join(__dirname, '..', 'node_modules')),
+        ensureExistsRelative(path.join(__dirname, '..', '..', 'node_modules')),
+        'node_modules',
+      ].filter(Boolean).concat(
+        // we resolve all global paths as well
+        nodePaths.map(absolutePath => path.relative(options.root, absolutePath)),
+      ),
       alias: [
         { main: path.join(options.root, options.src, options.main) },
         (!options.watch && !options.node && options.lite) && {
-          react: resolve('react-lite'),
-          'react-dom': resolve('react-lite'),
+          react: 'react-lite',
+          'react-dom': 'react-lite',
         },
       ]
       .filter(Boolean)
       .reduce((map, current) => Object.assign(map, current), {}),
     },
     watch: Boolean(options.watch || options.watchwrite),
+    cache: true,
+    bail: !(options.watch || options.watchwrite),
+    performance: {
+      hints: !(options.watch || options.watchwrite) && 'warning',
+    },
     module: {
-      loaders: [
+      rules: [
         {
-          test: /\.jsx?($|\?)/,
-          loader: resolve('babel-loader'),
+          test: /\.jsx?$/,
+          use: [{
+            loader: 'babel-loader',
+            options: babelPlugins(options, {
+              cacheDirectory: (options.watch || options.watchwrite) && findCacheDir({ name: 'pack' }),
+            }),
+          }],
           exclude: /node_modules/,
-          query: babelPlugins(options, {
-            cacheDirectory: (options.watch || options.watchwrite) && findCacheDir({ name: 'pack' }),
-          }),
         },
         {
-          test: /\.json($|\?)/,
-          loader: resolve('json-loader'),
+          test: /\.yaml$/,
+          use: ['json-loader', 'yaml-loader'],
         },
         {
-          test: /\.yaml($|\?)/,
-          loaders: [
-            resolve('json-loader'),
-            resolve('yaml-loader'),
-          ],
-        },
-        {
-          test: /\.coffee($|\?)/,
-          loader: resolve('coffee-loader'),
+          test: /\.coffee$/,
+          use: ['coffee-loader'],
         },
         !options.node && {
-          test: /\.(graphql|gql)($|\?)/,
+          test: /\.(graphql|gql)$/,
           exclude: /node_modules/,
-          loader: resolve('graphql-tag/loader'),
+          use: ['graphql-tag/loader'],
         },
-        !options.node && createStyleLoaders(/\.css($|\?(?!global))/, options.cssmodules, 'css'),
-        !options.node && createStyleLoaders(/\.css\?global$/, false, 'css'),
-        !options.node && createStyleLoaders(/\.scss($|\?(?!global))/, options.cssmodules, 'sass'),
-        !options.node && createStyleLoaders(/\.scss\?global$/, false, 'sass'),
-        !options.node && createStyleLoaders(/\.less($|\?(?!global))/, options.cssmodules, 'less'),
-        !options.node && createStyleLoaders(/\.less\?global$/, false, 'less'),
+        !options.node && createStyleLoaders('css'),
+        !options.node && createStyleLoaders('scss', 'sass'),
+        !options.node && createStyleLoaders('less', 'less'),
         !options.node && {
-          test: /\.(png|jpg|jpeg|gif|svg)($|\?)/,
-          loaders: [
-            resolve('url-loader', [
-              'limit=5000',
-              `name=${imagesPrefix}[name].[hash:base64:6].[ext]`,
-              `root=${saveRootPath}`,
-            ]),
-            !(options.watch || options.watchwrite) && resolve('image-webpack-loader', ['optimizationLevel=7', 'interlaced=false']),
+          test: /\.(png|jpg|jpeg|gif|svg)$/,
+          use: [
+            {
+              loader: 'url-loader',
+              options: {
+                limit: 5000,
+                name: `${imagesPrefix}[name].[hash:base64:6].[ext]`,
+                root: path.join(options.root, options.src),
+              },
+            },
+            !(options.watch || options.watchwrite) && {
+              loader: 'image-webpack-loader',
+              options: {
+                optimizationLevel: 7,
+                interlaced: false,
+              },
+            },
           ].filter(Boolean),
         },
         !options.node && {
-          test: /\.(webp)($|\?)/,
-          loader: resolve('url-loader', ['limit=5000', `name=${imagesPrefix}[name].[hash:base64:6].[ext]`]),
+          test: /\.(webp)$/,
+          use: [{
+            loader: 'url-loader',
+            options: {
+              limit: 5000,
+              name: `${imagesPrefix}[name].[hash:base64:6].[ext]`,
+            },
+          }],
         },
         !options.node && {
-          test: /\.(html)($|\?)/,
-          loader: resolve('raw-loader'),
+          test: /\.html$/,
+          use: ['raw-loader'],
         },
         {
-          test: /\.(pug|jade)($|\?)/,
-          loader: resolve('pug-loader', [`root=${saveRootPath}`, `basedir=${saveRootPath}`]),
+          test: /\.(pug|jade)$/,
+          use: [{
+            loader: 'pug-loader',
+            options: {
+              root: path.join(options.root, options.src),
+              basedir: path.join(options.root, options.src),
+            },
+          }],
         },
         !options.node && {
-          test: /\.(woff|ttf|eot|woff2|otf)($|\?)/,
-          loader: resolve('url-loader', ['limit=5000', `name=${fontsPrefix}[name].[hash:base64:6].[ext]`]),
+          test: /\.(woff|ttf|eot|woff2|otf)$/,
+          use: [{
+            loader: 'url-loader',
+            options: {
+              limit: 5000,
+              name: `${fontsPrefix}[name].[hash:base64:6].[ext]`,
+            },
+          }],
         },
         !options.node && {
-          test: /\.(ico|mp4|webm)($|\?)/,
-          loader: resolve('url-loader', ['limit=5000', `name=${mediaPrefix}[name].[hash:base64:6].[ext]`]),
+          test: /\.(ico|mp4|webm)$/,
+          use: [{
+            loader: 'url-loader',
+            options: {
+              limit: 5000,
+              name: `${mediaPrefix}[name].[hash:base64:6].[ext]`,
+            },
+          }],
         },
         options.node && {
           // eslint-disable-next-line max-len
-          test: /\.(css|scss|less|woff|ttf|eot|woff2|svg|ico|otf|webp|png|jpg|jpeg|gif|html|mp4|webm)($|\?)/,
-          loader: resolve('raw-loader'),
+          test: /\.(css|scss|less|woff|ttf|eot|woff2|svg|ico|otf|webp|png|jpg|jpeg|gif|html|mp4|webm)$/,
+          use: ['raw-loader'],
         },
       ].filter(Boolean),
     },
-    resolveLoader: {
-      fallback: [
-        ensureExists(path.join(__dirname, '../node_modules')),
-        ensureExists(path.join(__dirname, '../../node_modules')),
-      ].filter(Boolean),
-    },
-    devtool: ((options.watch || options.watchwrite) && 'eval') || 'source-map',
+    devtool: ((options.watch || options.watchwrite) && 'inline-source-map') || 'source-map',
     plugins: [
-      new webpack.NoErrorsPlugin(),
-      options.watch && !options.watchwrite && new webpack.HotModuleReplacementPlugin(),
+      (options.watch || options.watchwrite) && new webpack.HotModuleReplacementPlugin(),
+      (options.watch || options.watchwrite) && new webpack.NamedModulesPlugin(),
+      new webpack.LoaderOptionsPlugin({
+        minimize: !(options.watch && options.watchwrite),
+        debug: Boolean(options.watch || options.watchwrite),
+        options: {
+          postcss: [
+            autoprefixer({
+              browsers: [
+                '>1%',
+                'last 4 versions',
+                'Firefox ESR',
+                'not ie < 9', // React doesn't support IE8 anyway
+              ],
+            }),
+          ],
+        },
+      }),
       (options.watch || options.watchwrite) && new webpack.DefinePlugin(mergeEnvironment({
         'process.env.NODE_ENV': JSON.stringify('development'),
       })),
-      !(options.watch || options.watchwrite) && new webpack.optimize.OccurenceOrderPlugin(),
-      !(options.watch || options.watchwrite) && new webpack.optimize.DedupePlugin(),
+      !(options.watch || options.watchwrite) && new webpack.DefinePlugin(mergeEnvironment({
+        'process.env.NODE_ENV': JSON.stringify('production'),
+      })),
       (
         !options.node &&
         !(options.watch || options.watchwrite)
@@ -250,9 +343,6 @@ export default (options) => {
         },
       }),
       (!options.node && !(options.watch || options.watchwrite)) && new ExtractTextPlugin(`${cssPrefix}${options.bundle}.css`),
-      !(options.watch || options.watchwrite) && new webpack.DefinePlugin(mergeEnvironment({
-        'process.env.NODE_ENV': JSON.stringify('production'),
-      })),
       (
         !options.node &&
         ((options.watch || options.watchwrite) || templateOptions.template) &&
@@ -264,18 +354,5 @@ export default (options) => {
       __dirname: false,
       __filename: false,
     },
-    cache: true,
-    debug: Boolean(options.watch || options.watchwrite),
-    bail: !(options.watch || options.watchwrite),
-    postcss: !options.node && (() => ([
-      autoprefixer({
-        browsers: [
-          '>1%',
-          'last 4 versions',
-          'Firefox ESR',
-          'not ie < 9', // React doesn't support IE8 anyway
-        ],
-      }),
-    ])),
   };
 };
