@@ -1,4 +1,4 @@
-describe('env', () => {
+describe('env and tree-shaking', () => {
   let result;
   before(async function () {
     this.timeout(120000);
@@ -13,5 +13,11 @@ describe('env', () => {
   it('replaces placeholders', async () => {
     const [{ content }] = await result('**/*.js');
     expect(content).to.contain('UNIQID2');
+  });
+
+  it('removes unused code (tree-shaking)', async () => {
+    const [{ content }] = await result('**/*.js');
+    expect(content).to.contain('CONST:1');
+    expect(content).to.not.contain('CONST:2');
   });
 });

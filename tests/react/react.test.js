@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-extraneous-dependencies
 import css from 'css';
 
 describe('build react / sass', () => {

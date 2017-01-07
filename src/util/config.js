@@ -345,7 +345,7 @@ export default (options) => {
       (!options.node && !(options.watch || options.watchwrite)) && new ExtractTextPlugin(`${cssPrefix}${options.bundle}.css`),
       (
         !options.node &&
-        ((options.watch || options.watchwrite) || templateOptions.template) &&
+        ((options.watch || options.watchwrite) || templateOptions.template || options.quick) &&
         !options.proxy
       ) && new HtmlWebpackPlugin(templateOptions),
       (options.watch || options.watchwrite) && new CaseSensitivePathsPlugin(),

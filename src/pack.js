@@ -34,6 +34,7 @@ const DEFAULT_OPTIONS = {
   watchwrite: false,
   resolve: '',
   index: 'index.html',
+  quick: false,
   externals: {},
 };
 
@@ -57,6 +58,7 @@ const VALID_OPTIONS = {
   watchwrite: true,
   resolve: true,
   index: true,
+  quick: true,
   externals: true,
 };
 
@@ -64,6 +66,7 @@ const VALID_FILE_OPTIONS = Object.assign({}, VALID_OPTIONS, {
   watch: false,
   test: false,
   watchwrite: false,
+  quick: false,
 });
 
 const VALID_CLI_OPTIONS = Object.assign({}, VALID_OPTIONS, {
@@ -145,6 +148,10 @@ commander
     appendDefault('env', 'provide a file with environment variables'),
   )
   .option(
+    '-q, --quick [filename]',
+    appendDefault('quick', 'quick compile a file'),
+  )
+  .option(
     '--proxy [proxy/address]',
     appendDefault('proxy', 'proxy port or address for development server (development)'),
   )
@@ -196,9 +203,19 @@ const normaliseAssets = (assets) => {
 
 const fileOptions = pick(fileConfig, VALID_FILE_OPTIONS);
 const cliOptions = pick(commander, VALID_CLI_OPTIONS);
+const quickOptions = commander.quick
+  ? {
+    src: path.dirname(commander.quick),
+    main: path.basename(commander.quick, path.extname(commander.quick)),
+    flatten: true,
+    assets: '',
+  }
+  : {};
+
 const tempOptions = Object.assign(
   {},
   DEFAULT_OPTIONS,
+  quickOptions,
   fileOptions,
   cliOptions,
   { root: process.cwd() },
@@ -266,8 +283,18 @@ if (options.test) {
       // eslint-disable-next-line no-console
       console.error(directError.message);
       process.exit(1);
+    } else if (stats.compilation.errors && stats.compilation.errors.length) {
+      // eslint-disable-next-line no-console
+      console.error(colors.bold.red(`\n\n\n------ build failed for ${options.src} ------`));
+      // eslint-disable-next-line no-console
+      console.log(colors.red(
+        stats.compilation.errors.map(error => error.message)
+        .join('\n\n\n------\n\n'),
+      ));
+      process.exit(1);
     } else {
       if (options.watchwrite) {
+        // create an empty stylesheet to prevent http errors in development
         const styleFilename = path.join(options.root, options.dist, (!options.flatten && 'css') || '', `${options.bundle}.css`);
         mkdirp.sync(path.dirname(styleFilename));
         fs.writeFileSync(styleFilename, '/* css gets only generated for production bundle */', {
