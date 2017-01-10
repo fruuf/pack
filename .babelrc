@@ -1,13 +1,10 @@
 {
   "presets": [
-    "babel-preset-react",
   	"babel-preset-es2015",
-  	"babel-preset-es2016",
+    "babel-preset-es2016",
   	"babel-preset-es2017"
   ],
   "plugins": [
-  	"babel-plugin-transform-runtime",
-  	"babel-plugin-transform-es2015-destructuring",
-  	"babel-plugin-transform-object-rest-spread"
+  	"babel-plugin-transform-runtime"
   ]
 }
