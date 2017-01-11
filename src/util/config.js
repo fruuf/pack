@@ -8,12 +8,26 @@ import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
 import findCacheDir from 'find-cache-dir';
 import jsonfile from 'jsonfile';
 import loadEnvFile from 'node-env-file';
+import { exec } from 'child_process';
 import { ensureExists, nodePaths, babelPlugins } from './util';
 
 // takes options as an argument (ether derived from CLI or pack.json) and returns webpack options
-export default (options) => {
+export default async (options) => {
+  // run commands in the project root
+  const command = cmd => new Promise((resolve) => {
+    exec(cmd, { cwd: options.root }, (err, stdout, stderr) => {
+      if (err || stderr) {
+        resolve('');
+      } else {
+        resolve(stdout.split('\n').join(''));
+      }
+    });
+  });
+
   // we want to allow cloud9 out of the box and support https
   const hostname = (process.env.C9_HOSTNAME && `http://${process.env.C9_HOSTNAME}`) || `http${options.secure ? 's' : ''}://localhost:${options.port}/`;
+  const GIT_COMMIT_HASH = await command('git rev-parse HEAD');
+  const GIT_BRANCH_NAME = await command('git rev-parse --abbrev-ref HEAD');
 
   // passing extensions via CLI can be a bit weird, we normalise them here
   const additionalExtensions = ((options.resolve || '').match(/[\w\d]+/g) || []).map(ext => `.${ext}`);
@@ -58,7 +72,10 @@ export default (options) => {
   const mergeEnvironment = envBase => Object.assign(
     Object.keys(environment).reduce((acc, cur) => Object.assign(acc, {
       [`process.env.${cur}`]: JSON.stringify(environment[cur]),
-    }), {}),
+    }), {
+      'process.env.GIT_COMMIT_HASH': JSON.stringify(GIT_COMMIT_HASH),
+      'process.env.GIT_BRANCH_NAME': JSON.stringify(GIT_BRANCH_NAME),
+    }),
     envBase,
   );
 

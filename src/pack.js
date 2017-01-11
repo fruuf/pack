@@ -221,97 +221,98 @@ const tempOptions = Object.assign(
   { root: process.cwd() },
 );
 const options = Object.assign({}, tempOptions, { assets: normaliseAssets(tempOptions.assets) });
-const config = getConfig(options);
 
-if (options.test) {
-  const mocha = new Mocha();
-  setupTest(options);
-  const globPattern = path.join(options.src, '**/*test.js');
-  const testFiles = glob.sync(globPattern, {
-    cwd: options.root,
-    ignore: 'node_modules/**',
-  });
-  mocha.addFile(path.join(__dirname, 'util/test.js'));
-  testFiles.forEach((testFile) => {
-    mocha.addFile(path.join(options.root, testFile));
-  });
-  mocha.run((failures) => {
-    if (failures === 0) {
-      // eslint-disable-next-line no-console
-      console.log(colors.bold.green('\n\n\n------ tests passed ------'));
-    } else {
-      // eslint-disable-next-line no-console
-      console.error(colors.bold.red(`\n\n\n------ ${failures} tests failed ------`));
-      process.exit(1);
-    }
-  });
-} else if (options.watch && !options.node) {
-  const compiler = webpack(config);
-  const server = new WebpackDevServer(compiler, {
-    publicPath: config.output.publicPath,
-    stats: {
-      colors: true,
-      hash: false,
-      timings: true,
-      chunks: false,
-      chunkModules: false,
-      modules: false,
-    },
-    hot: true,
-    inline: true,
-    historyApiFallback: !options.proxy && { index: path.join(options.assets, 'index.html') },
-    https: Boolean(options.secure),
-    proxy: options.proxy
-      ? {
-        '**': {
-          target: String(options.proxy).match(/^\d+$/)
-            ? `http${options.secure ? 's' : ''}://localhost:${options.proxy}`
-            : String(options.proxy),
-          secure: false, // lets ignore self-signed certs
-        },
+getConfig(options).then((config) => {
+  if (options.test) {
+    const mocha = new Mocha();
+    setupTest(options);
+    const globPattern = path.join(options.src, '**/*test.js');
+    const testFiles = glob.sync(globPattern, {
+      cwd: options.root,
+      ignore: 'node_modules/**',
+    });
+    mocha.addFile(path.join(__dirname, 'util/test.js'));
+    testFiles.forEach((testFile) => {
+      mocha.addFile(path.join(options.root, testFile));
+    });
+    mocha.run((failures) => {
+      if (failures === 0) {
+        // eslint-disable-next-line no-console
+        console.log(colors.bold.green('\n\n\n------ tests passed ------'));
+      } else {
+        // eslint-disable-next-line no-console
+        console.error(colors.bold.red(`\n\n\n------ ${failures} tests failed ------`));
+        process.exit(1);
       }
-      : {},
-  });
-  server.listen(options.port, '0.0.0.0');
-  // eslint-disable-next-line no-console
-  console.log(`http${options.secure ? 's' : ''}://localhost:${options.port}`);
-} else {
-  webpack(config, (directError, stats) => {
-    if (directError) {
-      // eslint-disable-next-line no-console
-      console.error(colors.bold.red(`\n\n\n------ build failed for ${options.src} ------`));
-      // eslint-disable-next-line no-console
-      console.error(directError.message);
-      process.exit(1);
-    } else if (stats.compilation.errors && stats.compilation.errors.length) {
-      // eslint-disable-next-line no-console
-      console.error(colors.bold.red(`\n\n\n------ build failed for ${options.src} ------`));
-      // eslint-disable-next-line no-console
-      console.log(colors.red(
-        stats.compilation.errors.map(error => error.message)
-        .join('\n\n\n------\n\n'),
-      ));
-      process.exit(1);
-    } else {
-      if (options.watchwrite) {
-        // create an empty stylesheet to prevent http errors in development
-        const styleFilename = path.join(options.root, options.dist, (!options.flatten && 'css') || '', `${options.bundle}.css`);
-        mkdirp.sync(path.dirname(styleFilename));
-        fs.writeFileSync(styleFilename, '/* css gets only generated for production bundle */', {
-          encoding: 'utf8',
-          flag: 'w',
-        });
-      }
-      // eslint-disable-next-line no-console
-      console.log(colors.bold.green(`\n\n\n------ build succeeded for ${options.src} ------`));
-      // eslint-disable-next-line no-console
-      console.log(stats.toString({
-        chunks: false,
+    });
+  } else if (options.watch && !options.node) {
+    const compiler = webpack(config);
+    const server = new WebpackDevServer(compiler, {
+      publicPath: config.output.publicPath,
+      stats: {
         colors: true,
-      }));
-      const statsFile = path.join(process.cwd(), options.dist, 'stats.json');
-      const statsObj = stats.toJson();
-      jsonfile.writeFile(statsFile, statsObj);
-    }
-  });
-}
+        hash: false,
+        timings: true,
+        chunks: false,
+        chunkModules: false,
+        modules: false,
+      },
+      hot: true,
+      inline: true,
+      historyApiFallback: !options.proxy && { index: path.join(options.assets, 'index.html') },
+      https: Boolean(options.secure),
+      proxy: options.proxy
+        ? {
+          '**': {
+            target: String(options.proxy).match(/^\d+$/)
+              ? `http${options.secure ? 's' : ''}://localhost:${options.proxy}`
+              : String(options.proxy),
+            secure: false, // lets ignore self-signed certs
+          },
+        }
+        : {},
+    });
+    server.listen(options.port, '0.0.0.0');
+    // eslint-disable-next-line no-console
+    console.log(`http${options.secure ? 's' : ''}://localhost:${options.port}`);
+  } else {
+    webpack(config, (directError, stats) => {
+      if (directError) {
+        // eslint-disable-next-line no-console
+        console.error(colors.bold.red(`\n\n\n------ build failed for ${options.src} ------`));
+        // eslint-disable-next-line no-console
+        console.error(directError.message);
+        process.exit(1);
+      } else if (stats.compilation.errors && stats.compilation.errors.length) {
+        // eslint-disable-next-line no-console
+        console.error(colors.bold.red(`\n\n\n------ build failed for ${options.src} ------`));
+        // eslint-disable-next-line no-console
+        console.log(colors.red(
+          stats.compilation.errors.map(error => error.message)
+          .join('\n\n\n------\n\n'),
+        ));
+        process.exit(1);
+      } else {
+        if (options.watchwrite) {
+          // create an empty stylesheet to prevent http errors in development
+          const styleFilename = path.join(options.root, options.dist, (!options.flatten && 'css') || '', `${options.bundle}.css`);
+          mkdirp.sync(path.dirname(styleFilename));
+          fs.writeFileSync(styleFilename, '/* css gets only generated for production bundle */', {
+            encoding: 'utf8',
+            flag: 'w',
+          });
+        }
+        // eslint-disable-next-line no-console
+        console.log(colors.bold.green(`\n\n\n------ build succeeded for ${options.src} ------`));
+        // eslint-disable-next-line no-console
+        console.log(stats.toString({
+          chunks: false,
+          colors: true,
+        }));
+        const statsFile = path.join(process.cwd(), options.dist, 'stats.json');
+        const statsObj = stats.toJson();
+        jsonfile.writeFile(statsFile, statsObj);
+      }
+    });
+  }
+});
