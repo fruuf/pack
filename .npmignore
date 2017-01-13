@@ -9,3 +9,4 @@ circle.yml
 .git
 .tmp
 .babelrc
+yarn-error.log
