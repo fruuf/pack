@@ -10,68 +10,11 @@ import glob from 'glob';
 import mkdirp from 'mkdirp';
 import getConfig from './util/config';
 import setupTest from './util/test';
+import createScaffold from './util/scaffold';
+import { DEFAULT_OPTIONS, VALID_OPTIONS, VALID_CLI_OPTIONS, VALID_FILE_OPTIONS } from './util/options';
 
 let fileConfig = {}; // eslint-disable-line no-var
 let fileConfigSuccess = false; // eslint-disable-line no-var
-
-const DEFAULT_OPTIONS = {
-  watch: false,
-  react: false,
-  lite: false,
-  cssmodules: false,
-  node: false,
-  flatten: false,
-  port: '8080',
-  assets: 'assets',
-  src: 'src',
-  test: false,
-  main: 'main',
-  dist: 'dist',
-  bundle: 'bundle',
-  env: '',
-  proxy: '',
-  secure: false,
-  watchwrite: false,
-  resolve: '',
-  index: 'index.html',
-  quick: false,
-  externals: {},
-};
-
-const VALID_OPTIONS = {
-  watch: true,
-  react: true,
-  lite: true,
-  cssmodules: true,
-  node: true,
-  flatten: true,
-  port: true,
-  assets: true,
-  src: true,
-  test: true,
-  main: true,
-  dist: true,
-  env: true,
-  bundle: true,
-  proxy: true,
-  secure: true,
-  watchwrite: true,
-  resolve: true,
-  index: true,
-  quick: true,
-  externals: true,
-};
-
-const VALID_FILE_OPTIONS = Object.assign({}, VALID_OPTIONS, {
-  watch: false,
-  test: false,
-  watchwrite: false,
-  quick: false,
-});
-
-const VALID_CLI_OPTIONS = Object.assign({}, VALID_OPTIONS, {
-  externals: false,
-});
 
 const pick = (data, validOptions) => Object.keys(validOptions).reduce((newData, option) => {
   if (validOptions[option] && option in data) {
@@ -171,6 +114,10 @@ commander
     '--index [filename]',
     appendDefault('index', 'html entry file in src'),
   )
+  .option(
+    '--init',
+    appendDefault('init', 'initialise an empty project in current directory'),
+  )
   .parse(process.argv);
 
 const attemptFileConfig = (fileName) => {
@@ -196,9 +143,9 @@ if (invalidFileOptions.length) {
 }
 
 const normaliseAssets = (assets) => {
-  const cleanUrl = path.normalize(String(assets));
-  if (cleanUrl === '.') return '/';
-  return `${cleanUrl[0] === '/' ? '' : '/'}${cleanUrl}/`;
+  const cleanUrl = String(assets).match(/^\/?(.*?)\/?$/)[1];
+  if (cleanUrl === '') return '/';
+  return `/${cleanUrl}/`;
 };
 
 const fileOptions = pick(fileConfig, VALID_FILE_OPTIONS);
@@ -223,7 +170,18 @@ const tempOptions = Object.assign(
 const options = Object.assign({}, tempOptions, { assets: normaliseAssets(tempOptions.assets) });
 
 getConfig(options).then((config) => {
-  if (options.test) {
+  if (options.init) {
+    createScaffold(options).then((result) => {
+      if (result) {
+        // eslint-disable-next-line no-console
+        console.log(colors.bold.green('\n\n\n------ project initialised ------'));
+      } else {
+        // eslint-disable-next-line no-console
+        console.error(colors.bold.red('\n\n\n------ project root must be empty ------'));
+        process.exit(1);
+      }
+    });
+  } else if (options.test) {
     const mocha = new Mocha();
     setupTest(options);
     const globPattern = path.join(options.src, '**/*test.js');
