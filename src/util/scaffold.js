@@ -32,19 +32,20 @@ export default () => (
 );
 `;
 
-const dependencyList = [
-  'pack-cli',
-  'react',
-];
+const dependencyList = options => ([
+  options.node && 'babel-runtime',
+  options.react && 'react',
+].filter(Boolean));
 
-const devDependencyList = [
+const devDependencyList = () => ([
   'babel-eslint',
   'eslint',
   'eslint-config-airbnb',
   'eslint-plugin-import',
   'eslint-plugin-jsx-a11y',
   'eslint-plugin-react',
-];
+  'pack-cli',
+]);
 
 const foldDependencies = async (depsList) => {
   const latestVersions = await Promise.all(depsList.map(latestVersion));
@@ -65,9 +66,9 @@ const checkDirectory = async dir => new Promise((resolve) => {
   });
 });
 
-export const createPackageJson = async () => {
-  const dependencies = await foldDependencies(dependencyList);
-  const devDependencies = await foldDependencies(devDependencyList);
+const createPackageJson = async (options) => {
+  const dependencies = await foldDependencies(dependencyList(options));
+  const devDependencies = await foldDependencies(devDependencyList(options));
   const packageJson = {
     scripts: {
       start: 'pack -w',
@@ -80,10 +81,14 @@ export const createPackageJson = async () => {
   return packageJson;
 };
 
-export const createEslintRc = async () => ({
+const createEslintRc = async options => ({
   parser: 'babel-eslint',
   extends: 'airbnb',
-  env: { mocha: true },
+  env: [
+    'mocha',
+    !options.node && 'browser',
+    options.node && 'node',
+  ].filter(Boolean).reduce((acc, cur) => Object.assign(acc, { [cur]: true }), {}),
   parserOptions: { ecmaVersion: 8 },
   rules: {
     'import/no-unresolved': 0,
@@ -91,13 +96,14 @@ export const createEslintRc = async () => ({
     'react/jsx-filename-extension': 0,
     'import/extensions': 0,
   },
-  globals: {
-    expect: true,
-    mount: true,
-  },
+  globals: [
+    'expect',
+    'process',
+    options.react && 'mount',
+  ].filter(Boolean).reduce((acc, cur) => Object.assign(acc, { [cur]: true }), {}),
 });
 
-export const createPackJson = async options => Object.keys(VALID_FILE_OPTIONS)
+const createPackJson = async options => Object.keys(VALID_FILE_OPTIONS)
   .filter(option => VALID_FILE_OPTIONS[option])
   .filter(option => DEFAULT_OPTIONS[option] !== options[option])
   .reduce((acc, option) => Object.assign(acc, { [option]: options[option] }), {});
