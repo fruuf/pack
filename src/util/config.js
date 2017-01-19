@@ -28,6 +28,7 @@ export default async (options) => {
   const hostname = (process.env.C9_HOSTNAME && `http://${process.env.C9_HOSTNAME}`) || `http${options.secure ? 's' : ''}://localhost:${options.port}/`;
   const GIT_COMMIT_HASH = await command('git rev-parse HEAD');
   const GIT_BRANCH_NAME = await command('git rev-parse --abbrev-ref HEAD');
+  const devMode = Boolean(options.watch || options.watchwrite);
 
   // passing extensions via CLI can be a bit weird, we normalise them here
   const additionalExtensions = ((options.resolve || '').match(/[\w\d]+/g) || []).map(ext => `.${ext}`);
@@ -131,7 +132,7 @@ export default async (options) => {
     // wraps the inner stack for development (embedded) and productiobn (extract into css file)
     const wrapInnerLoaders = (test, cssModules) => {
       const result = { test };
-      if (options.watch || options.watchwrite) {
+      if (devMode) {
         result.use = [{ loader: 'style-loader' }].concat(getInnerLoaders(cssModules));
       } else {
         result.loader = ExtractTextPlugin.extract({
@@ -177,7 +178,7 @@ export default async (options) => {
       path: path.join(options.root, options.dist),
       publicPath: options.assets,
       filename: `${options.node ? '' : jsPrefix}${options.bundle}${options.hash ? '.[hash]' : ''}.js`,
-      pathinfo: Boolean(options.watch || options.watchwrite),
+      pathinfo: devMode,
     },
     target: options.node ? 'node' : 'web',
     externals: options.node ? nodeModules : (options.externals || {}),
@@ -212,11 +213,11 @@ export default async (options) => {
       .filter(Boolean)
       .reduce((map, current) => Object.assign(map, current), {}),
     },
-    watch: Boolean(options.watch || options.watchwrite),
+    watch: devMode,
     cache: true,
-    bail: !(options.watch || options.watchwrite),
+    bail: !devMode,
     performance: {
-      hints: !(options.watch || options.watchwrite) && 'warning',
+      hints: !devMode && 'warning',
     },
     module: {
       rules: [
@@ -225,7 +226,7 @@ export default async (options) => {
           use: [{
             loader: 'babel-loader',
             options: babelPlugins(options, {
-              cacheDirectory: (options.watch || options.watchwrite) && findCacheDir({ name: 'pack' }),
+              cacheDirectory: devMode && findCacheDir({ name: 'pack' }),
             }),
           }],
           exclude: /node_modules/,
@@ -257,7 +258,7 @@ export default async (options) => {
                 root: path.join(options.root, options.src),
               },
             },
-            !(options.watch || options.watchwrite) && {
+            !devMode && {
               loader: 'image-webpack-loader',
               options: {
                 optimizationLevel: 7,
@@ -317,13 +318,13 @@ export default async (options) => {
         },
       ].filter(Boolean),
     },
-    devtool: ((options.watch || options.watchwrite) && 'eval-source-map') || 'source-map',
+    devtool: (devMode && 'eval-source-map') || 'source-map',
     plugins: [
-      (options.watch || options.watchwrite) && new webpack.HotModuleReplacementPlugin(),
-      (options.watch || options.watchwrite) && new webpack.NamedModulesPlugin(),
+      devMode && new webpack.HotModuleReplacementPlugin(),
+      devMode && new webpack.NamedModulesPlugin(),
       new webpack.LoaderOptionsPlugin({
-        minimize: !(options.watch && options.watchwrite),
-        debug: Boolean(options.watch || options.watchwrite),
+        minimize: !devMode,
+        debug: devMode,
         options: {
           postcss: [
             autoprefixer({
@@ -337,16 +338,17 @@ export default async (options) => {
           ],
         },
       }),
-      (options.watch || options.watchwrite) && new webpack.DefinePlugin(mergeEnvironment({
+      devMode && new webpack.DefinePlugin(mergeEnvironment({
         'process.env.NODE_ENV': JSON.stringify('development'),
       })),
-      !(options.watch || options.watchwrite) && new webpack.DefinePlugin(mergeEnvironment({
+      !devMode && new webpack.DefinePlugin(mergeEnvironment({
         'process.env.NODE_ENV': JSON.stringify('production'),
       })),
       (
         !options.node &&
-        !(options.watch || options.watchwrite)
+        !devMode
       ) && new webpack.optimize.UglifyJsPlugin({
+        sourceMap: true,
         compress: {
           screw_ie8: true,
           warnings: false,
@@ -360,14 +362,14 @@ export default async (options) => {
         },
       }),
       (
-        !options.node && !(options.watch || options.watchwrite)
+        !options.node && !devMode
       ) && new ExtractTextPlugin(`${cssPrefix}${options.bundle}${options.hash ? '.[hash]' : ''}.css`),
       (
         !options.node &&
-        ((options.watch || options.watchwrite) || templateOptions.template || options.quick) &&
+        (devMode || templateOptions.template || options.quick) &&
         !options.proxy
       ) && new HtmlWebpackPlugin(templateOptions),
-      (options.watch || options.watchwrite) && new CaseSensitivePathsPlugin(),
+      devMode && new CaseSensitivePathsPlugin(),
     ].filter(Boolean),
     node: {
       __dirname: false,

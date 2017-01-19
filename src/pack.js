@@ -59,16 +59,12 @@ commander
     appendDefault('node', 'build for nodeJS'),
   )
   .option(
-    '-f, --flatten',
-    appendDefault('flatten', 'prevent subfolders in output'),
-  )
-  .option(
-    '--hash',
-    appendDefault('hash', 'append bundle hash to filenames for cache busting'),
-  )
-  .option(
     '-p, --port [number]',
     appendDefault('port', 'port number for development server (development)'),
+  )
+  .option(
+    '-q, --quick [filename]',
+    appendDefault('quick', 'quick compile a file'),
   )
   .option(
     '-a, --assets [directory]',
@@ -95,12 +91,16 @@ commander
     appendDefault('env', 'provide a file with environment variables'),
   )
   .option(
-    '-q, --quick [filename]',
-    appendDefault('quick', 'quick compile a file'),
-  )
-  .option(
     '--proxy [proxy/address]',
     appendDefault('proxy', 'proxy port or address for development server (development)'),
+  )
+  .option(
+    '--flatten',
+    appendDefault('flatten', 'prevent subfolders in output'),
+  )
+  .option(
+    '--hash',
+    appendDefault('hash', 'append bundle hash to filenames for cache busting'),
   )
   .option(
     '--secure',

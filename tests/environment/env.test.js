@@ -2,7 +2,7 @@ describe('env and tree-shaking', () => {
   let result;
   before(async function () {
     this.timeout(120000);
-    result = await pack(__dirname, '--env .env');
+    result = await pack(__dirname, '--env env');
   });
 
   it('builds project', async () => {
