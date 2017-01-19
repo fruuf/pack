@@ -63,6 +63,10 @@ commander
     appendDefault('flatten', 'prevent subfolders in output'),
   )
   .option(
+    '--hash',
+    appendDefault('hash', 'append bundle hash to filenames for cache busting'),
+  )
+  .option(
     '-p, --port [number]',
     appendDefault('port', 'port number for development server (development)'),
   )
@@ -109,10 +113,6 @@ commander
   .option(
     '--resolve [extensions]',
     appendDefault('resolve', 'resolve extensions other than .js, .json, .coffee'),
-  )
-  .option(
-    '--index [filename]',
-    appendDefault('index', 'html entry file in src'),
   )
   .option(
     '--init',

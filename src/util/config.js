@@ -98,9 +98,9 @@ export default async (options) => {
   }
 
   // we use a webpack plugin to serve some basic html to include scripts and bootstrap react
-  const templateOptions = ensureExists(path.join(options.root, options.src, options.index))
+  const templateOptions = ensureExists(path.join(options.root, options.src, 'index.html'))
     ? {
-      template: path.join(options.root, options.src, options.index),
+      template: path.join(options.root, options.src, 'index.html'),
       inject: true,
     }
     : {};
@@ -176,7 +176,7 @@ export default async (options) => {
     output: {
       path: path.join(options.root, options.dist),
       publicPath: options.assets,
-      filename: `${options.node ? '' : jsPrefix}${options.bundle}.js`,
+      filename: `${options.node ? '' : jsPrefix}${options.bundle}${options.hash ? '.[hash]' : ''}.js`,
       pathinfo: Boolean(options.watch || options.watchwrite),
     },
     target: options.node ? 'node' : 'web',
@@ -359,7 +359,9 @@ export default async (options) => {
           screw_ie8: true,
         },
       }),
-      (!options.node && !(options.watch || options.watchwrite)) && new ExtractTextPlugin(`${cssPrefix}${options.bundle}.css`),
+      (
+        !options.node && !(options.watch || options.watchwrite)
+      ) && new ExtractTextPlugin(`${cssPrefix}${options.bundle}${options.hash ? '.[hash]' : ''}.css`),
       (
         !options.node &&
         ((options.watch || options.watchwrite) || templateOptions.template || options.quick) &&

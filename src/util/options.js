@@ -17,9 +17,9 @@ export const DEFAULT_OPTIONS = {
   secure: false,
   watchwrite: false,
   resolve: '',
-  index: 'index.html',
   quick: false,
   init: false,
+  hash: false,
   externals: {},
 };
 
@@ -42,9 +42,9 @@ export const VALID_OPTIONS = {
   secure: true,
   watchwrite: true,
   resolve: true,
-  index: true,
   quick: true,
   init: true,
+  hash: true,
   externals: true,
 };
 
