@@ -177,7 +177,7 @@ export default async (options) => {
     output: {
       path: path.join(options.root, options.dist),
       publicPath: options.assets,
-      filename: `${options.node ? '' : jsPrefix}${options.bundle}${options.hash ? '.[hash]' : ''}.js`,
+      filename: `${options.node ? '' : jsPrefix}${options.bundle}${(options.hash && !devMode) ? '.[hash]' : ''}.js`,
       pathinfo: devMode,
     },
     target: options.node ? 'node' : 'web',
@@ -363,7 +363,7 @@ export default async (options) => {
       }),
       (
         !options.node && !devMode
-      ) && new ExtractTextPlugin(`${cssPrefix}${options.bundle}${options.hash ? '.[hash]' : ''}.css`),
+      ) && new ExtractTextPlugin(`${cssPrefix}${options.bundle}${(options.hash && !devMode) ? '.[hash]' : ''}.css`),
       (
         !options.node &&
         (devMode || templateOptions.template || options.quick) &&
