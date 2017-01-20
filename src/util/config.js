@@ -344,10 +344,7 @@ export default async (options) => {
       !devMode && new webpack.DefinePlugin(mergeEnvironment({
         'process.env.NODE_ENV': JSON.stringify('production'),
       })),
-      (
-        !options.node &&
-        !devMode
-      ) && new webpack.optimize.UglifyJsPlugin({
+      (!devMode) && new webpack.optimize.UglifyJsPlugin({
         sourceMap: true,
         compress: {
           screw_ie8: true,

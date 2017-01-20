@@ -69,11 +69,12 @@ const checkDirectory = async dir => new Promise((resolve) => {
 const createPackageJson = async (options) => {
   const dependencies = await foldDependencies(dependencyList(options));
   const devDependencies = await foldDependencies(devDependencyList(options));
+  const src = options.src !== 'src';
   const packageJson = {
     scripts: {
-      start: 'pack -w',
-      test: 'eslint src && pack -t',
-      build: 'pack',
+      start: `pack -w${src ? `s ${options.src}` : ''}`,
+      test: `eslint ${options.src} && pack -t${src ? `s ${options.src}` : ''}`,
+      build: `pack${src ? ` -s ${options.src}` : ''}`,
     },
     dependencies,
     devDependencies,
@@ -91,6 +92,7 @@ const createEslintRc = async options => ({
   ].filter(Boolean).reduce((acc, cur) => Object.assign(acc, { [cur]: true }), {}),
   parserOptions: { ecmaVersion: 8 },
   rules: {
+    'global-require': 0,
     'import/no-unresolved': 0,
     'import/no-absolute-path': 0,
     'react/jsx-filename-extension': 0,

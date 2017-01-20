@@ -49,6 +49,7 @@ export const VALID_OPTIONS = {
 };
 
 export const VALID_FILE_OPTIONS = Object.assign({}, VALID_OPTIONS, {
+  src: false,
   watch: false,
   test: false,
   watchwrite: false,
