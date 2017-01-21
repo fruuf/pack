@@ -2,32 +2,17 @@ import path from 'path';
 import webpack from 'webpack';
 import ExtractTextPlugin from 'extract-text-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import fs from 'fs';
 import autoprefixer from 'autoprefixer';
 import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
 import findCacheDir from 'find-cache-dir';
-import jsonfile from 'jsonfile';
-import loadEnvFile from 'node-env-file';
-import { exec } from 'child_process';
-import { ensureExists, nodePaths, babelPlugins } from './util';
+import { ensureExists, babelPlugins, getNodeModules, getEnvironment, nodePaths } from './helper';
 
 // takes options as an argument (ether derived from CLI or pack.json) and returns webpack options
 export default async (options) => {
-  // run commands in the project root
-  const command = cmd => new Promise((resolve) => {
-    exec(cmd, { cwd: options.root }, (err, stdout, stderr) => {
-      if (err || stderr) {
-        resolve('');
-      } else {
-        resolve(stdout.split('\n').join(''));
-      }
-    });
-  });
-
   // we want to allow cloud9 out of the box and support https
   const hostname = (process.env.C9_HOSTNAME && `http://${process.env.C9_HOSTNAME}`) || `http${options.secure ? 's' : ''}://localhost:${options.port}/`;
-  const GIT_COMMIT_HASH = await command('git rev-parse HEAD');
-  const GIT_BRANCH_NAME = await command('git rev-parse --abbrev-ref HEAD');
+
+  // watch or watchwrite trigger development mode
   const devMode = Boolean(options.watch || options.watchwrite);
 
   // passing extensions via CLI can be a bit weird, we normalise them here
@@ -41,62 +26,16 @@ export default async (options) => {
   const mediaPrefix = options.flatten ? '' : 'media/';
 
   // to inject keys etc into a client bundle webpack replaces process.env.[NAME] when provided
-  let environment = {};
-  if (options.env) {
-    let envFile = '';
-    if (path.isAbsolute(options.env)) {
-      envFile = ensureExists(options.env);
-    } else {
-      envFile = [
-        path.join(options.root, options.src, options.env),
-        path.join(options.root, options.env),
-      ].map(ensureExists).filter(Boolean)[0] || '';
-    }
+  const environment = await getEnvironment(options);
 
-    if (!envFile) {
-      throw new Error(`env file ${options.env} not found`);
-    } else if (path.extname(envFile).toLowerCase() === '.json') {
-      try {
-        environment = jsonfile.readFileSync(envFile);
-      } catch (e) {
-        throw new Error(`invalid json in ${envFile}`);
-      }
-    } else {
-      try {
-        environment = loadEnvFile(envFile, { raise: true });
-      } catch (e) {
-        throw new Error(`bad format in ${envFile}`);
-      }
-    }
-  }
-
-  const mergeEnvironment = envBase => Object.assign(
-    Object.keys(environment).reduce((acc, cur) => Object.assign(acc, {
-      [`process.env.${cur}`]: JSON.stringify(environment[cur]),
-    }), {
-      'process.env.GIT_COMMIT_HASH': JSON.stringify(GIT_COMMIT_HASH),
-      'process.env.GIT_BRANCH_NAME': JSON.stringify(GIT_BRANCH_NAME),
-    }),
-    envBase,
+  // parse environment for usage in webpack plugin
+  const pluginEnvironment = Object.keys(environment).reduce(
+    (acc, cur) => Object.assign(acc, { [`process.env.${cur}`]: JSON.stringify(environment[cur]) }),
+    {},
   );
 
   // we need all installed node modules to prevent webpack from including them into a server bundle
-  const nodeModules = {};
-  if (options.node) {
-    [
-      ensureExists(path.join(__dirname, '../../node_modules')),
-      ensureExists(path.join(options.root, 'node_modules')),
-    ]
-    .filter(Boolean)
-    .concat(nodePaths)
-    .forEach((nodeModulesPath) => {
-      fs.readdirSync(nodeModulesPath)
-      .filter(x => ['.bin', '.cache'].indexOf(x) === -1)
-      .forEach((mod) => {
-        nodeModules[mod] = `commonjs ${mod}`;
-      });
-    });
-  }
+  const nodeModules = options.node ? getNodeModules(options) : {};
 
   // we use a webpack plugin to serve some basic html to include scripts and bootstrap react
   const templateOptions = ensureExists(path.join(options.root, options.src, 'index.html'))
@@ -113,31 +52,41 @@ export default async (options) => {
       {
         loader: 'css-loader',
         options: {
+          // toggle css modules
           modules: cssModules,
+          // classname for css modules
           localIdentName: '[name]__[local]___[hash:base64:5]',
+          // we use postcss, disable the prefixer here
           autoprefixer: false,
+          // allow absolute import in stylesheets
           root: path.join(options.root, options.src),
+          // used for followups in style sheet imports
           importLoaders: 1,
         },
       },
+      // prefix css for better compatibility
       { loader: 'postcss-loader' },
+      // include the parser (less / sass) as the first loader
       (parser) && {
         loader: `${parser}-loader`,
         options: {
+          // allow root slash import
           root: path.join(options.root, options.src),
         },
       },
     ].filter(Boolean));
 
-    // wraps the inner stack for development (embedded) and productiobn (extract into css file)
+    // wraps the inner stack for development (embedded) and production (extract into css file)
     const wrapInnerLoaders = (test, cssModules) => {
       const result = { test };
       if (devMode) {
+        // style loader includes all stylesheets into the JS bundle in development
         result.use = [{ loader: 'style-loader' }].concat(getInnerLoaders(cssModules));
       } else {
+        // in production we want a seperate minified stylesheet
         result.loader = ExtractTextPlugin.extract({
           fallbackLoader: 'style-loader',
-          // ExtractTextPlugino only supports query, not options
+          // ExtractTextPlugin only supports query, not options
           loader: getInnerLoaders(cssModules).map(
             loader => Object.assign({}, loader, { query: loader.options }),
           ),
@@ -153,6 +102,7 @@ export default async (options) => {
         wrapInnerLoaders(new RegExp(`\\.${extension}$`, 'i'), true),
       ] };
     }
+    // if we disable css modules there is no need for a bypass
     return wrapInnerLoaders(new RegExp(`\\.${extension}$`, 'i'), false);
   };
 
@@ -166,23 +116,34 @@ export default async (options) => {
 
   return {
     entry: [
+      // hot-reloading for node development mode
       (options.node && options.watch) && 'webpack/hot/poll?1000',
-      (!options.node && options.watch && !options.watchwrite) && 'react-hot-loader/patch',
+      // react component hot reloading with persistent state
+      (options.react && !options.node && options.watch && !options.watchwrite) && 'react-hot-loader/patch',
+      // entry point for browser hot reloading
       (!options.node && options.watch && !options.watchwrite) && `webpack-dev-server/client?${hostname}`,
+      // entry point for webpack dev server
       (!options.node && options.watch && !options.watchwrite) && 'webpack/hot/dev-server',
+      // fetch polyfill is included as default
       !options.node && 'whatwg-fetch',
+      // entry point is the main option
       (options.node || !options.react) && path.join(options.root, options.src, options.main),
+      // in react mode we start with the pack-cli react entry point for component hot reloading
       (!options.node && options.react) && path.join(__dirname, 'react'),
     ].filter(Boolean),
     output: {
       path: path.join(options.root, options.dist),
+      // assets gets normalises do /path/ before the options are passed
       publicPath: options.assets,
-      filename: `${options.node ? '' : jsPrefix}${options.bundle}${(options.hash && !devMode) ? '.[hash]' : ''}.js`,
+      // since we only output one JS file there is no need for a subfolder in node mode
+      filename: `${options.node ? '' : jsPrefix}${options.bundle}.js`,
       pathinfo: devMode,
     },
     target: options.node ? 'node' : 'web',
+    // can be used to include modules from a cdn or to prevent bundling additional modules in node
     externals: options.node ? nodeModules : (options.externals || {}),
     context: options.root,
+    // this one is only for the loaders in development mode
     resolveLoader: {
       modules: [
         // for development or global install we want to resolve pack-cli node_modules as well
@@ -192,10 +153,12 @@ export default async (options) => {
       ].filter(Boolean),
     },
     resolve: {
+      // the extensions that can be omitted when importing files
       extensions: ['.js', '.jsx', '.json', '.coffee'].concat(additionalExtensions),
       modules: [
         // allows to resolve react components as first class modules
         options.react && ensureExists(path.join(options.root, options.src, 'components')),
+        // for global install
         ensureExistsRelative(path.join(__dirname, '..', 'node_modules')),
         ensureExistsRelative(path.join(__dirname, '..', '..', 'node_modules')),
         'node_modules',
@@ -204,23 +167,28 @@ export default async (options) => {
         nodePaths.map(absolutePath => path.relative(options.root, absolutePath)),
       ),
       alias: [
+        // we alias the main entry point as main, thats how the react wrapper finds the entry
         { main: path.join(options.root, options.src, options.main) },
+        // react lite gets enabled via alias
         (!options.watch && !options.node && options.lite) && {
           react: 'react-lite',
           'react-dom': 'react-lite',
         },
       ]
       .filter(Boolean)
+      // merge alias options
       .reduce((map, current) => Object.assign(map, current), {}),
     },
     watch: devMode,
     cache: true,
     bail: !devMode,
     performance: {
+      // prevent warnings about file size in development mode
       hints: !devMode && 'warning',
     },
     module: {
       rules: [
+        // javascript / jsx with babel
         {
           test: /\.jsx?$/,
           use: [{
@@ -231,22 +199,32 @@ export default async (options) => {
           }],
           exclude: /node_modules/,
         },
+
+        // yaml config files
         {
           test: /\.yaml$/,
           use: ['json-loader', 'yaml-loader'],
         },
+
+        // coffee-script
         {
           test: /\.coffee$/,
           use: ['coffee-loader'],
         },
+
+        // import graphql
         !options.node && {
           test: /\.(graphql|gql)$/,
           exclude: /node_modules/,
           use: ['graphql-tag/loader'],
         },
+
+        // import stylesheets and parse them correctly
         !options.node && createStyleLoaders('css'),
         !options.node && createStyleLoaders('scss', 'sass'),
         !options.node && createStyleLoaders('less', 'less'),
+
+        // import images into browser bundle and minify / inline them if necccessary
         !options.node && {
           test: /\.(png|jpg|jpeg|gif|svg)$/,
           use: [
@@ -267,6 +245,8 @@ export default async (options) => {
             },
           ].filter(Boolean),
         },
+
+        // allow webp images without optimize
         !options.node && {
           test: /\.(webp)$/,
           use: [{
@@ -277,10 +257,14 @@ export default async (options) => {
             },
           }],
         },
+
+        // import html as raw text into the bundle for browser
         !options.node && {
           test: /\.html$/,
           use: ['raw-loader'],
         },
+
+        // support for jade/pug, imports become a function that takes template vars and returns html
         {
           test: /\.(pug|jade)$/,
           use: [{
@@ -291,6 +275,8 @@ export default async (options) => {
             },
           }],
         },
+
+        // allow import of webfonts into the bundle
         !options.node && {
           test: /\.(woff|ttf|eot|woff2|otf)$/,
           use: [{
@@ -301,6 +287,8 @@ export default async (options) => {
             },
           }],
         },
+
+        // allow importing icons and movies into the application
         !options.node && {
           test: /\.(ico|mp4|webm)$/,
           use: [{
@@ -311,6 +299,8 @@ export default async (options) => {
             },
           }],
         },
+
+        // when using node inline all allowed file types into the production bundle
         options.node && {
           // eslint-disable-next-line max-len
           test: /\.(css|scss|less|woff|ttf|eot|woff2|svg|ico|otf|webp|png|jpg|jpeg|gif|html|mp4|webm)$/,
@@ -318,33 +308,41 @@ export default async (options) => {
         },
       ].filter(Boolean),
     },
+
+    // eval-source-map seems to be the only one that does reliable source maps in development
     devtool: (devMode && 'eval-source-map') || 'source-map',
+
     plugins: [
+      // allows hot reloading (module.hot / module.hot.accept)
       devMode && new webpack.HotModuleReplacementPlugin(),
+
+      // ensures correct module names in development
       devMode && new webpack.NamedModulesPlugin(),
+
+      // provides options to loaders, mostly backward compatibility with webpack 1
       new webpack.LoaderOptionsPlugin({
         minimize: !devMode,
         debug: devMode,
         options: {
           postcss: [
+            // autoprefix css to maximise browser compatibility
             autoprefixer({
               browsers: [
                 '>1%',
                 'last 4 versions',
                 'Firefox ESR',
-                'not ie < 9', // React doesn't support IE8 anyway
+                'not ie < 9',
               ],
             }),
           ],
         },
       }),
-      devMode && new webpack.DefinePlugin(mergeEnvironment({
-        'process.env.NODE_ENV': JSON.stringify('development'),
-      })),
-      !devMode && new webpack.DefinePlugin(mergeEnvironment({
-        'process.env.NODE_ENV': JSON.stringify('production'),
-      })),
-      (!devMode) && new webpack.optimize.UglifyJsPlugin({
+
+      // inline environment variables into bundle within process.env.KEY
+      new webpack.DefinePlugin(pluginEnvironment),
+
+      // minify bundle and apply tree-shaking / dead code elimination
+      !devMode && new webpack.optimize.UglifyJsPlugin({
         sourceMap: true,
         compress: {
           screw_ie8: true,
@@ -358,16 +356,24 @@ export default async (options) => {
           screw_ie8: true,
         },
       }),
+
+      // extract css in production build
       (
         !options.node && !devMode
-      ) && new ExtractTextPlugin(`${cssPrefix}${options.bundle}${(options.hash && !devMode) ? '.[hash]' : ''}.css`),
+      ) && new ExtractTextPlugin(`${cssPrefix}${options.bundle}.css`),
+
+      // provide a simple html enty in development mode and include it in the bundle in quick mode
       (
         !options.node &&
         (devMode || templateOptions.template || options.quick) &&
         !options.proxy
       ) && new HtmlWebpackPlugin(templateOptions),
+
+      // better debugging on case-insensitive operating systems (MacOS)
       devMode && new CaseSensitivePathsPlugin(),
     ].filter(Boolean),
+
+    // allow __dirname and __filename in webpack
     node: {
       __dirname: false,
       __filename: false,

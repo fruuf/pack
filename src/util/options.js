@@ -19,7 +19,6 @@ export const DEFAULT_OPTIONS = {
   resolve: '',
   quick: false,
   init: false,
-  hash: false,
   externals: {},
 };
 
@@ -44,12 +43,10 @@ export const VALID_OPTIONS = {
   resolve: true,
   quick: true,
   init: true,
-  hash: true,
   externals: true,
 };
 
 export const VALID_FILE_OPTIONS = Object.assign({}, VALID_OPTIONS, {
-  src: false,
   watch: false,
   test: false,
   watchwrite: false,

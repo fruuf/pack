@@ -12,15 +12,6 @@ describe('cli features', () => {
     expect(filenames).to.include('stats.json');
   });
 
-  it('hashes output', async function () {
-    this.timeout(120000);
-    const result = await pack(__dirname, '--hash');
-    const scriptFilenames = (await result('**/*.js')).map(file => file.name);
-    const styleFilenames = (await result('**/*.css')).map(file => file.name);
-    expect(scriptFilenames).to.include.something.that.match(/^js\/bundle\.[0-9a-f]{20}\.js$/);
-    expect(styleFilenames).to.include.something.that.match(/^css\/bundle\.[0-9a-f]{20}\.css$/);
-  });
-
   it('builds in quick mode', async function () {
     this.timeout(120000);
     const result = await pack(__dirname, '-q src/main.js');
@@ -54,7 +45,7 @@ describe('cli features', () => {
 
   it('initialises project', async function () {
     this.timeout(120000);
-    const result = await pack(__dirname, '-rlc --flatten --hash --init', { copy: false, root: '.' });
+    const result = await pack(__dirname, '-rlc --flatten --init', { copy: false, root: '.' });
     const checkJson = async (glob, fn) => {
       const files = await result(glob);
       if (files.length !== 1) throw new Error(`found ${files.length} files for ${glob} but expected 1`);
@@ -79,12 +70,11 @@ describe('cli features', () => {
 
     await checkJson('src/pack.json', (data) => {
       expect(data).to.be.an('object');
-      expect(data).to.have.keys(['react', 'flatten', 'lite', 'cssmodules', 'hash']);
+      expect(data).to.have.keys(['react', 'flatten', 'lite', 'cssmodules']);
       expect(data.react).to.equal(true);
       expect(data.flatten).to.equal(true);
       expect(data.lite).to.equal(true);
       expect(data.cssmodules).to.equal(true);
-      expect(data.hash).to.equal(true);
     });
   });
 });

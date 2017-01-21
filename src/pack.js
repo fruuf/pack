@@ -13,15 +13,19 @@ import setupTest from './util/test';
 import createScaffold from './util/scaffold';
 import { DEFAULT_OPTIONS, VALID_OPTIONS, VALID_CLI_OPTIONS, VALID_FILE_OPTIONS } from './util/options';
 
-let fileConfig = {}; // eslint-disable-line no-var
-let fileConfigSuccess = false; // eslint-disable-line no-var
+let fileConfig = {};
+let fileConfigSuccess = false;
 
-const pick = (data, validOptions) => Object.keys(validOptions).reduce((newData, option) => {
-  if (validOptions[option] && option in data) {
-    return Object.assign({}, newData, { [option]: data[option] });
-  }
-  return newData;
-}, {});
+// allow only valid options
+const filterValidOptions = (data, validOptions) => Object.keys(validOptions).reduce(
+  (newData, option) => {
+    if (validOptions[option] && option in data) {
+      return Object.assign({}, newData, { [option]: data[option] });
+    }
+    return newData;
+  },
+  {},
+ );
 
 const appendDefault = (option, str) => {
   let defaultValue = DEFAULT_OPTIONS[option];
@@ -31,6 +35,7 @@ const appendDefault = (option, str) => {
   return `${str} [${defaultValue}]`;
 };
 
+// cli options
 commander
   .version(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).version)
   .description('pack a bundle')
@@ -99,10 +104,6 @@ commander
     appendDefault('flatten', 'prevent subfolders in output'),
   )
   .option(
-    '--hash',
-    appendDefault('hash', 'append bundle hash to filenames for cache busting'),
-  )
-  .option(
     '--secure',
     appendDefault('secure', 'run the dev server as https and proxy to a https server if enabled (development)'),
   )
@@ -148,8 +149,8 @@ const normaliseAssets = (assets) => {
   return `/${cleanUrl}/`;
 };
 
-const fileOptions = pick(fileConfig, VALID_FILE_OPTIONS);
-const cliOptions = pick(commander, VALID_CLI_OPTIONS);
+const fileOptions = filterValidOptions(fileConfig, VALID_FILE_OPTIONS);
+const cliOptions = filterValidOptions(commander, VALID_CLI_OPTIONS);
 const quickOptions = commander.quick
   ? {
     src: path.dirname(commander.quick),
@@ -183,25 +184,27 @@ getConfig(options).then((config) => {
     });
   } else if (options.test) {
     const mocha = new Mocha();
-    setupTest(options);
-    const globPattern = path.join(options.src, '**/*test.js');
-    const testFiles = glob.sync(globPattern, {
-      cwd: options.root,
-      ignore: 'node_modules/**',
-    });
-    mocha.addFile(path.join(__dirname, 'util/test.js'));
-    testFiles.forEach((testFile) => {
-      mocha.addFile(path.join(options.root, testFile));
-    });
-    mocha.run((failures) => {
-      if (failures === 0) {
+    // runs async to allow fetching the environment
+    setupTest(options).then(() => {
+      const globPattern = path.join(options.src, '**/*test.js');
+      const testFiles = glob.sync(globPattern, {
+        cwd: options.root,
+        ignore: 'node_modules/**',
+      });
+      mocha.addFile(path.join(__dirname, 'util/test.js'));
+      testFiles.forEach((testFile) => {
+        mocha.addFile(path.join(options.root, testFile));
+      });
+      mocha.run((failures) => {
+        if (failures === 0) {
         // eslint-disable-next-line no-console
-        console.log(colors.bold.green('\n\n\n------ tests passed ------'));
-      } else {
+          console.log(colors.bold.green('\n\n\n------ tests passed ------'));
+        } else {
         // eslint-disable-next-line no-console
-        console.error(colors.bold.red(`\n\n\n------ ${failures} tests failed ------`));
-        process.exit(1);
-      }
+          console.error(colors.bold.red(`\n\n\n------ ${failures} tests failed ------`));
+          process.exit(1);
+        }
+      });
     });
   } else if (options.watch && !options.node) {
     const compiler = webpack(config);
