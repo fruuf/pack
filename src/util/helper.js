@@ -20,6 +20,7 @@ export const ensureExists = (fn) => {
 export const babelPlugins = (options, extend = {}) => Object.assign({
   // we dont allow modifications via .babelrc
   babelrc: false,
+  ignore: /node_modules/,
   presets: [
     // transpile react
     require.resolve('babel-preset-react'),

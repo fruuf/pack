@@ -1,5 +1,10 @@
 # changelog
 
+1.4.1
+-----
+
+- ignore /node_modules/ in babel config.
+
 1.4.0
 -----
 
