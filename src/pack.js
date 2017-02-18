@@ -8,6 +8,8 @@ import Mocha from 'mocha';
 import fs from 'fs';
 import glob from 'glob';
 import mkdirp from 'mkdirp';
+import { spawn } from 'child_process';
+import { Observable, Subject } from 'rxjs';
 import getConfig from './util/config';
 import setupTest from './util/test';
 import createScaffold from './util/scaffold';
@@ -34,6 +36,7 @@ const appendDefault = (option, str) => {
   if (typeof (defaultValue) === 'object') defaultValue = '{}';
   return `${str} [${defaultValue}]`;
 };
+
 
 // cli options
 commander
@@ -236,6 +239,94 @@ getConfig(options).then((config) => {
     server.listen(options.port, '0.0.0.0');
     // eslint-disable-next-line no-console
     console.log(`http${options.secure ? 's' : ''}://localhost:${options.port}`);
+  } else if (options.node && options.watch) {
+    const webpackStream = Observable.create((observer) => {
+      webpack(config, (directError, stats) => {
+        observer.next(stats);
+        if (directError) observer.error(directError);
+      });
+    })
+    .share();
+
+    // signal to start a process
+    const startStream = new Subject();
+
+    // signal to kill an existing process
+    const stopStream = new Subject();
+
+    // executes the node bundle
+    const statusStream = startStream.switchMap(() => Observable.create((observer) => {
+      const proc = spawn(
+        `node --inspect=9229 ${path.join(options.dist, `${options.bundle}.js`)}`,
+        { cwd: options.root, shell: true },
+      );
+
+      proc.stdout.on('data', data => observer.next({
+        type: 'data',
+        data: data.toString('utf-8'),
+      }));
+
+      proc.stderr.on('data', data => observer.next({
+        type: 'error',
+        data: data.toString('utf-8'),
+      }));
+
+      proc.on('close', data => observer.next({
+        type: 'close',
+        data: String(data),
+      }));
+
+      const stopSubscription = stopStream
+        .take(1)
+        .subscribe(() => proc.kill());
+
+      return () => {
+        stopSubscription.unsubscribe();
+        proc.kill();
+      };
+    }))
+    .share();
+
+
+    webpackStream
+      .map(stats => Boolean(stats.compilation.errors.length))
+      .distinctUntilChanged()
+      .filter(Boolean)
+      .subscribe(stopStream);
+
+    const isRunningStream = stopStream
+      .merge(statusStream.filter(status => status.type === 'close'))
+      .mapTo(false)
+      .merge(startStream.mapTo(true))
+      .startWith(false)
+      .distinctUntilChanged()
+      .share();
+
+    webpackStream
+      .withLatestFrom(isRunningStream)
+      .filter(([, isRunning]) => !isRunning)
+      .merge(
+        statusStream
+        .filter(status => status.type === 'error')
+        .filter(status => Boolean(String(status.data).match(/\[HMR\]\s+Cannot\s+apply\s+update/i))),
+      )
+      .mapTo(true)
+      .subscribe(startStream);
+
+    statusStream
+      .filter(status => status.type === 'data')
+      .map(status => status.data)
+      .merge(
+        statusStream
+        .filter(status => status.type === 'error')
+        .filter(status => !/debugger\s+listening\s+on\s+port/i.test(status.data))
+        .map(status => colors.red(status.data)),
+        statusStream
+        .filter(status => status.type === 'close')
+        .map(status => colors.red(`closed (${status.data})`)),
+      )
+      // eslint-disable-next-line no-console
+      .subscribe(text => console.log(text));
   } else {
     webpack(config, (directError, stats) => {
       if (directError) {
@@ -276,4 +367,10 @@ getConfig(options).then((config) => {
       }
     });
   }
+}).catch((e) => {
+  // eslint-disable-next-line no-console
+  console.error(colors.bold.red(`\n\n\n------ build failed for ${options.src} ------`));
+  // eslint-disable-next-line no-console
+  console.log(e);
+  process.exit(1);
 });

@@ -71,6 +71,7 @@ export default async (options) => {
         loader: `${parser}-loader`,
         options: {
           // allow root slash import
+          includePaths: [path.join(options.root, options.src)],
           root: path.join(options.root, options.src),
         },
       },
@@ -85,11 +86,8 @@ export default async (options) => {
       } else {
         // in production we want a seperate minified stylesheet
         result.loader = ExtractTextPlugin.extract({
-          fallbackLoader: 'style-loader',
-          // ExtractTextPlugin only supports query, not options
-          loader: getInnerLoaders(cssModules).map(
-            loader => Object.assign({}, loader, { query: loader.options }),
-          ),
+          fallback: 'style-loader',
+          use: getInnerLoaders(cssModules),
         });
       }
       return result;
@@ -169,6 +167,7 @@ export default async (options) => {
       alias: [
         // we alias the main entry point as main, thats how the react wrapper finds the entry
         { main: path.join(options.root, options.src, options.main) },
+        { src: path.join(options.root, options.src) },
         // react lite gets enabled via alias
         (!options.watch && !options.node && options.lite) && {
           react: 'react-lite',
@@ -196,7 +195,7 @@ export default async (options) => {
             options: babelPlugins(options, {
               cacheDirectory: devMode && findCacheDir({ name: 'pack' }),
             }),
-          }],
+          }].filter(Boolean),
           exclude: /node_modules/,
         },
 
@@ -239,8 +238,8 @@ export default async (options) => {
             !devMode && {
               loader: 'image-webpack-loader',
               options: {
-                optimizationLevel: 7,
-                interlaced: false,
+                optipng: { optimizationLevel: 7 },
+                gifsicle: { interlaced: false },
               },
             },
           ].filter(Boolean),
@@ -310,7 +309,7 @@ export default async (options) => {
     },
 
     // eval-source-map seems to be the only one that does reliable source maps in development
-    devtool: (devMode && 'eval-source-map') || 'source-map',
+    devtool: (devMode && !options.node && 'eval-source-map') || 'source-map',
 
     plugins: [
       // allows hot reloading (module.hot / module.hot.accept)

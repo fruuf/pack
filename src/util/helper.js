@@ -76,7 +76,7 @@ export const getNodeModules = options => [
   );
 
 
-  // to inject keys etc into a client bundle webpack replaces process.env.[NAME] when provided
+// to inject keys etc into a client bundle webpack replaces process.env.[NAME] when provided
 export const getEnvironment = async (options) => {
   // run commands in the project root
   const command = cmd => new Promise((resolve) => {
