@@ -1,4 +1,3 @@
-
 describe('build target node', () => {
   let result;
   before(async function () {

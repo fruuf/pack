@@ -21,14 +21,21 @@ describe('less', () => {
   it('prefixes css if needed', async () => {
     const [{ content }] = await result('**/*.css');
     const cssAST = css.parse(content);
-    const flex = cssAST.stylesheet.rules.find(
-      rule => rule.selectors.some(selector => selector === '.flex'),
-    );
+    const flex = cssAST.stylesheet.rules.find(rule =>
+      rule.selectors.some(selector => selector === '.flex'));
     expect(flex).to.be.an('object');
     const displayDeclarations = flex.declarations.filter(
       declaration => declaration.property === 'display',
     );
     expect(displayDeclarations.length).to.be.at.least(4);
+  });
+
+  it('allows to opt-in css modules', async () => {
+    const [{ content }] = await result('**/*.css');
+    const cssAST = css.parse(content);
+    const selectors = cssAST.stylesheet.rules.reduce((acc, rule) => acc.concat(rule.selectors), []);
+    expect(selectors).to.not.include.something.to.match(/\.(specific-class)$/i);
+    expect(selectors).to.include.something.to.match(/\.(app|header|gradient)/);
   });
 
   it('fails the unit tests', async function () {

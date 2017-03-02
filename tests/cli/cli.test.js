@@ -1,4 +1,3 @@
-
 describe('cli features', () => {
   it('flattens output', async function () {
     this.timeout(120000);
@@ -48,7 +47,9 @@ describe('cli features', () => {
     const result = await pack(__dirname, '-rlc --flatten --init', { copy: false, root: '.' });
     const checkJson = async (glob, fn) => {
       const files = await result(glob);
-      if (files.length !== 1) throw new Error(`found ${files.length} files for ${glob} but expected 1`);
+      if (files.length !== 1) {
+        throw new Error(`found ${files.length} files for ${glob} but expected 1`);
+      }
       const [{ content }] = files;
       const data = JSON.parse(content);
       return fn(data);

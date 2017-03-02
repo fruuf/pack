@@ -16,9 +16,11 @@ export default async (options) => {
   global.expect = expect;
 
   // allow tests to be written in modern js with the same babel settings
-  register(babelPlugins(options, {
-    ignore: /node_modules/,
-  }));
+  register(
+    babelPlugins(options, {
+      ignore: /node_modules/,
+    }),
+  );
 
   // chai addon for promoises
   chai.use(chaiPromise);

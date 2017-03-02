@@ -11,6 +11,9 @@ const greeting = new Greeting();
 console.log(greeting.sayHello('foo'));
 console.log('bound', greeting.boundFunc());
 // we use setTimeout to loose context
-window.setTimeout(() => {
-  console.log('unbound', ::greeting.unboundFunc());
-}, 0);
+window.setTimeout(
+  () => {
+    console.log('unbound', ::greeting.unboundFunc());
+  },
+  0,
+);

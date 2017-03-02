@@ -36,13 +36,13 @@ export default () => (
 );
 `;
 
-const dependencyList = options => ([
+const dependencyList = options => [
   // a node app might require babel-runtime for polyfills (generators etc)
   options.node && 'babel-runtime',
   options.react && 'react',
-].filter(Boolean));
+].filter(Boolean);
 
-const devDependencyList = () => ([
+const devDependencyList = () => [
   // the default eslint has problems with more recent babel features
   'babel-eslint',
   'eslint',
@@ -53,14 +53,14 @@ const devDependencyList = () => ([
   'eslint-plugin-react',
   // pack-cli needs to be present in development
   'pack-cli',
-]);
+];
 
 // runs latestVersion on all dependencies and converts them into package.json format
 const foldDependencies = async (depsList) => {
   const latestVersions = await Promise.all(depsList.map(latestVersion));
   return depsList.reduce(
-    (acc, cur, index) => Object.assign(acc, { [cur]: `^${latestVersions[index]}` })
-    , {},
+    (acc, cur, index) => Object.assign(acc, { [cur]: `^${latestVersions[index]}` }),
+    {},
   );
 };
 
@@ -76,7 +76,6 @@ const checkDirectory = async dir => new Promise((resolve) => {
     }
   });
 });
-
 
 const createPackageJson = async (options) => {
   // wrap into packageJson format
@@ -106,11 +105,13 @@ const createEslintRc = async options => ({
     // enable environments based on provided options
     !options.node && 'browser',
     options.node && 'node',
-  ].filter(Boolean).reduce(
-    // zip array elements to object keys with value true
-    (acc, cur) => Object.assign(acc, { [cur]: true }),
-    {},
-  ),
+  ]
+    .filter(Boolean)
+    .reduce(
+      // zip array elements to object keys with value true
+      (acc, cur) => Object.assign(acc, { [cur]: true }),
+      {},
+    ),
   // we allow the latest ecmaVersion
   parserOptions: { ecmaVersion: 8 },
   rules: {
@@ -132,11 +133,13 @@ const createEslintRc = async options => ({
     options.react && 'mount',
     // we include a fetch polyfill in browser mode
     !options.node && 'fetch',
-  ].filter(Boolean).reduce(
-    // zip to object keys with value true
-    (acc, cur) => Object.assign(acc, { [cur]: true }),
-    {},
-  ),
+  ]
+    .filter(Boolean)
+    .reduce(
+      // zip to object keys with value true
+      (acc, cur) => Object.assign(acc, { [cur]: true }),
+      {},
+    ),
 });
 
 const createPackJson = async options => Object.keys(VALID_FILE_OPTIONS)
@@ -146,7 +149,6 @@ const createPackJson = async options => Object.keys(VALID_FILE_OPTIONS)
   .filter(option => DEFAULT_OPTIONS[option] !== options[option])
   // zip them into an object and return
   .reduce((acc, option) => Object.assign(acc, { [option]: options[option] }), {});
-
 
 export default async (options) => {
   // the directory needs to be empty
@@ -165,7 +167,10 @@ export default async (options) => {
 
     // write pack.json into root if src is non-default
     if (options.src === 'src') {
-      fs.writeFileSync(path.join(options.root, options.src, 'pack.json'), JSON.stringify(packJson, null, 2));
+      fs.writeFileSync(
+        path.join(options.root, options.src, 'pack.json'),
+        JSON.stringify(packJson, null, 2),
+      );
     } else {
       fs.writeFileSync(path.join(options.root, 'pack.json'), JSON.stringify(packJson, null, 2));
     }

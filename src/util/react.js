@@ -3,7 +3,6 @@ import React from 'react';
 import { render } from 'react-dom';
 import Component from './app-container';
 
-
 // find element with id render or create an empty div
 const renderTarget = document.getElementById('render') || document.createElement('div');
 // append renderTarget to the body if necccessary

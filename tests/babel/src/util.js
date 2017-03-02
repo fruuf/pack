@@ -1,11 +1,12 @@
 /* global fetch, window */
 
-
 // supports generators and ultimately async / await (ES8)
 export const getRepos = async () => {
-  const response = await Promise.resolve({ json() {
-    return [];
-  } });
+  const response = await Promise.resolve({
+    json() {
+      return [];
+    },
+  });
   const data = await response.json();
   return data;
 };
@@ -30,7 +31,7 @@ export class Greeting {
     return [this.prefix, message].join(Greeting.seperator);
   }
 
-  boundFunc = () => this.prefix
+  boundFunc = () => this.prefix;
 
   unboundFunc() {
     return this.prefix;

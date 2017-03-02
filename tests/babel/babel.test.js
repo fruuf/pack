@@ -1,4 +1,3 @@
-
 describe('babel features', () => {
   it('bundles app with babel language features', async function () {
     this.timeout(120000);

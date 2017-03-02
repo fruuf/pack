@@ -17,7 +17,7 @@ const rm = denodeify(rimraf);
 const cp = denodeify(recursiveCopy);
 const tempDir = path.join(__dirname, '..', '.tmp');
 const packExecutable = path.join(__dirname, '..', '.bin', 'pack');
-const exec = denodeify(childProcess.exec, (err, stdout, stderr) => ([err, [stdout, stderr]]));
+const exec = denodeify(childProcess.exec, (err, stdout, stderr) => [err, [stdout, stderr]]);
 
 const defaultOptions = {
   copy: true,
@@ -30,30 +30,37 @@ const pack = async (cwd, args, options = {}) => {
   fs.mkdirSync(tempDir);
   if (opt.copy) await cp(cwd, tempDir);
   const result = await exec(`${packExecutable} ${args}`, { cwd: tempDir });
-  if (result[1]) throw new Error(result[1]);
+  // eslint-disable-next-line no-console
+  if (result[1]) console.warn(result[1]);
 
   return globPattern => new Promise((resolve, reject) => {
-    glob(globPattern, {
-      cwd: path.join(tempDir, opt.root),
-      root: path.join(tempDir, opt.root),
-    }, (err, files) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(
-          files.map(name => ({
-            name, content: fs.readFileSync(path.join(tempDir, opt.root, name), { encoding: 'utf8' }),
-          })),
-        );
-      }
-    });
+    glob(
+      globPattern,
+      {
+        cwd: path.join(tempDir, opt.root),
+        root: path.join(tempDir, opt.root),
+      },
+      (err, files) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(
+            files.map(name => ({
+              name,
+              content: fs.readFileSync(path.join(tempDir, opt.root, name), { encoding: 'utf8' }),
+            })),
+          );
+        }
+      },
+    );
   });
 };
 
-const packTest = (cwd, args) => denodeify(
-  childProcess.exec,
-  (err, stdout, stderr) => ([null, !(err || stderr)]),
-)(`${packExecutable} ${args} -t`, { cwd });
+const packTest = (cwd, args) =>
+  denodeify(childProcess.exec, (err, stdout, stderr) => [
+    null,
+    !(err || stderr),
+  ])(`${packExecutable} ${args} -t`, { cwd });
 
 global.pack = pack;
 global.packTest = packTest;
