@@ -256,13 +256,6 @@ export default async (options) => {
                 root: path.join(options.root, options.src),
               },
             },
-            !devMode && {
-              loader: 'image-webpack-loader',
-              options: {
-                optipng: { optimizationLevel: 7 },
-                gifsicle: { interlaced: false },
-              },
-            },
           ].filter(Boolean),
         },
 
