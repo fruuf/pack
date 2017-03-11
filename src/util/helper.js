@@ -24,14 +24,20 @@ export const babelPlugins = (options, extend = {}) => Object.assign(
       // transpile react
       require.resolve('babel-preset-react'),
       // ether false or undefined for modules, since mocha needs modules transpiled
-      [require.resolve('babel-preset-es2015'), { modules: Boolean(options.test) && undefined }],
+      [
+        require.resolve('babel-preset-es2015'),
+        { modules: Boolean(options.test) && undefined },
+      ],
       require.resolve('babel-preset-es2016'),
       // async / await
       require.resolve('babel-preset-es2017'),
     ],
     plugins: [
       // allow importing wiht a root slash that resolves into the srx directory
-      [require.resolve('babel-root-slash-import'), { rootPathSuffix: options.src }],
+      [
+        require.resolve('babel-root-slash-import'),
+        { rootPathSuffix: options.src },
+      ],
       // polyfills via imports
       require.resolve('babel-plugin-transform-runtime'),
       // they were popular and some projects still use decorators
@@ -76,7 +82,9 @@ export const getNodeModules = options => [
         .filter(x => ['.bin', '.cache'].indexOf(x) === -1)
         .reduce(
           (pathNodeModules, module) =>
-            Object.assign({}, pathNodeModules, { [module]: `commonjs ${module}` }),
+            Object.assign({}, pathNodeModules, {
+              [module]: `commonjs ${module}`,
+            }),
           nodeModules,
         ),
     {},
@@ -98,6 +106,7 @@ export const getEnvironment = async (options) => {
   // find git env variables via git command line
   const GIT_COMMIT_HASH = await command('git rev-parse HEAD');
   const GIT_BRANCH_NAME = await command('git rev-parse --abbrev-ref HEAD');
+  const BUILD_TARGET = options.node ? 'node' : 'browser';
 
   // node environment gets inlined into the bundle
   const NODE_ENV = ((options.watch || options.watchwrite) && 'development') ||
@@ -117,8 +126,7 @@ export const getEnvironment = async (options) => {
         path.join(options.root, options.env),
       ]
         .map(ensureExists)
-        .filter(Boolean)[0] ||
-        '';
+        .filter(Boolean)[0] || '';
     }
 
     if (!envFile) {
@@ -142,5 +150,8 @@ export const getEnvironment = async (options) => {
   }
 
   // merge defaults with provided environment variables
-  return Object.assign({ GIT_BRANCH_NAME, GIT_COMMIT_HASH, NODE_ENV }, userEnvironment);
+  return Object.assign(
+    { GIT_BRANCH_NAME, GIT_COMMIT_HASH, NODE_ENV, BUILD_TARGET },
+    userEnvironment,
+  );
 };

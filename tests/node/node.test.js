@@ -16,4 +16,10 @@ describe('build target node', () => {
     const names = stats.modules.map(module => module.name);
     expect(names).to.include.something.to.match(/external.*glob/);
   });
+
+  it('has node as a build target environment variable', async () => {
+    const [{ content }] = await result('**/bundle.js');
+    expect(content).to.contain('BUILD_TARGET_NODE');
+    expect(content).not.to.contain('BUILD_TARGET_BROWSER');
+  });
 });

@@ -38,6 +38,12 @@ describe('build react / sass', () => {
     expect(selectors).to.not.include.something.to.match(/\.(app|message)$/i);
     expect(selectors).to.include.something.to.match(/global-class/);
   });
+
+  it.only('has browser as a build target environment variable', async () => {
+    const [{ content }] = await result('**/bundle.js');
+    expect(content).not.to.contain('BUILD_TARGET_NODE');
+    expect(content).to.contain('BUILD_TARGET_BROWSER');
+  });
 });
 
 describe('test react / sass', () => {
