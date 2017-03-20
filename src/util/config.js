@@ -5,7 +5,14 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 import autoprefixer from 'autoprefixer';
 import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
 import findCacheDir from 'find-cache-dir';
-import { ensureExists, babelPlugins, getNodeModules, getEnvironment, nodePaths } from './helper';
+import {
+  ensureExists,
+  babelPlugins,
+  getNodeModules,
+  getEnvironment,
+  nodePaths,
+  resolvePath,
+} from './helper';
 
 // takes options as an argument (ether derived from CLI or pack.json) and returns webpack options
 export default async (options) => {
@@ -17,9 +24,8 @@ export default async (options) => {
   const devMode = Boolean(options.watch || options.watchwrite);
 
   // passing extensions via CLI can be a bit weird, we normalise them here
-  const additionalExtensions = ((options.resolve || '').match(/[\w\d]+/g) || []).map(
-    ext => `.${ext}`,
-  );
+  const additionalExtensions = ((options.resolve || '').match(/[\w\d]+/g) || [])
+    .map(ext => `.${ext}`);
 
   // we have quite a few options to alter how the output looks, we group them here
   const jsPrefix = options.flatten ? '' : 'js/';
@@ -32,9 +38,13 @@ export default async (options) => {
   const environment = await getEnvironment(options);
 
   // parse environment for usage in webpack plugin
-  const pluginEnvironment = Object.keys(environment).reduce((acc, cur) => Object.assign(acc, {
-    [`process.env.${cur}`]: JSON.stringify(environment[cur]),
-  }), {});
+  const pluginEnvironment = Object.keys(environment).reduce(
+    (acc, cur) =>
+      Object.assign(acc, {
+        [`process.env.${cur}`]: JSON.stringify(environment[cur]),
+      }),
+    {},
+  );
 
   // we need all installed node modules to prevent webpack from including them into a server bundle
   const nodeModules = options.node ? getNodeModules(options) : {};
@@ -49,34 +59,46 @@ export default async (options) => {
 
   const createStyleLoaders = (extension, parser = false) => {
     // creates the stack of loaders to parse less/sass/css and prefix it
-    const getInnerLoaders = cssModules => [
-      {
-        loader: 'css-loader',
-        options: {
-          // toggle css modules
-          modules: cssModules,
-          // classname for css modules
-          localIdentName: devMode ? '[name]__[local]___[hash:base64:5]' : '[hash:base64]',
-          // we use postcss, disable the prefixer here
-          autoprefixer: false,
-          // allow absolute import in stylesheets
-          root: path.join(options.root, options.src),
-          // used for followups in style sheet imports
-          importLoaders: 1,
+    const getInnerLoaders = cssModules =>
+      [
+        {
+          loader: 'css-loader',
+          options: {
+            // toggle css modules
+            modules: cssModules,
+            // classname for css modules
+            localIdentName: devMode ? '[name]__[local]___[hash:base64:5]' : '[hash:base64]',
+            // we use postcss, disable the prefixer here
+            autoprefixer: false,
+            // allow absolute import in stylesheets
+            root: path.join(options.root, options.src),
+            // used for followups in style sheet imports
+            importLoaders: 1,
+          },
         },
-      },
-      // prefix css for better compatibility
-      { loader: 'postcss-loader' },
-      // include the parser (less / sass) as the first loader
-      parser && {
-        loader: `${parser}-loader`,
-        options: {
-          // allow root slash import
-          includePaths: [path.join(options.root, options.src)],
-          root: path.join(options.root, options.src),
+        // prefix css for better compatibility
+        { loader: 'postcss-loader' },
+        // include the parser (less / sass) as the first loader
+        parser === 'sass' && {
+          loader: 'sass-loader',
+          options: {
+            // allow root slash import
+            includePaths: [path.join(options.root, options.src)],
+            importer(url, prev) {
+              const file = resolvePath(options, url, prev);
+              return { file };
+            },
+          },
         },
-      },
-    ].filter(Boolean);
+        parser === 'less' && {
+          loader: 'less-loader',
+          options: {
+            // allow root slash import
+            includePaths: [path.join(options.root, options.src)],
+            root: path.join(options.root, options.src),
+          },
+        },
+      ].filter(Boolean);
 
     // wraps the inner stack for development (embedded) and production (extract into css file)
     const wrapInnerLoaders = (test, cssModules) => {

@@ -20,6 +20,8 @@ import {
   VALID_FILE_OPTIONS,
 } from './util/options';
 
+// process.traceDeprecation = true;
+
 let fileConfig = {};
 let fileConfigSuccess = false;
 
@@ -294,7 +296,9 @@ getConfig(options)
               .switchMapTo(isRunningStream)
               .filter(isRunning => !isRunning),
           )
-          .mapTo(true)
+          .withLatestFrom(webpackStream)
+          .map(([, stats]) => stats.hash)
+          .distinctUntilChanged()
           .subscribe(startSignalSubject);
 
         const hiddenErrors = [

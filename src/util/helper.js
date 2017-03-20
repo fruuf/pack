@@ -15,49 +15,44 @@ export const ensureExists = (fn) => {
 };
 
 // exports an object with babelRC options
-export const babelPlugins = (options, extend = {}) => Object.assign(
-  {
-    // we dont allow modifications via .babelrc
-    babelrc: false,
-    ignore: /node_modules/,
-    presets: [
-      // transpile react
-      require.resolve('babel-preset-react'),
-      // ether false or undefined for modules, since mocha needs modules transpiled
-      [
-        require.resolve('babel-preset-es2015'),
-        { modules: Boolean(options.test) && undefined },
+export const babelPlugins = (options, extend = {}) =>
+  Object.assign(
+    {
+      // we dont allow modifications via .babelrc
+      babelrc: false,
+      ignore: /node_modules/,
+      presets: [
+        // transpile react
+        require.resolve('babel-preset-react'),
+        // ether false or undefined for modules, since mocha needs modules transpiled
+        [require.resolve('babel-preset-es2015'), { modules: Boolean(options.test) && undefined }],
+        require.resolve('babel-preset-es2016'),
+        // async / await
+        require.resolve('babel-preset-es2017'),
       ],
-      require.resolve('babel-preset-es2016'),
-      // async / await
-      require.resolve('babel-preset-es2017'),
-    ],
-    plugins: [
-      // allow importing wiht a root slash that resolves into the srx directory
-      [
-        require.resolve('babel-root-slash-import'),
-        { rootPathSuffix: options.src },
-      ],
-      // polyfills via imports
-      require.resolve('babel-plugin-transform-runtime'),
-      // they were popular and some projects still use decorators
-      require.resolve('babel-plugin-transform-decorators-legacy'),
-      // fancy class property definitions
-      require.resolve('babel-plugin-transform-class-properties'),
-      // binding functions to scopes with ::
-      require.resolve('babel-plugin-transform-function-bind'),
-      // ...rest for object desctruction
-      require.resolve('babel-plugin-transform-object-rest-spread'),
-      // required for react hot relaoding
-      options.react &&
-        options.watch &&
-        !options.node &&
-        !options.test &&
-        require.resolve('react-hot-loader/babel'),
-    ].filter(Boolean),
-  },
-  extend,
-);
+      plugins: [
+        // allow importing wiht a root slash that resolves into the srx directory
+        [require.resolve('babel-root-slash-import'), { rootPathSuffix: options.src }],
+        // polyfills via imports
+        require.resolve('babel-plugin-transform-runtime'),
+        // they were popular and some projects still use decorators
+        require.resolve('babel-plugin-transform-decorators-legacy'),
+        // fancy class property definitions
+        require.resolve('babel-plugin-transform-class-properties'),
+        // binding functions to scopes with ::
+        require.resolve('babel-plugin-transform-function-bind'),
+        // ...rest for object desctruction
+        require.resolve('babel-plugin-transform-object-rest-spread'),
+        // required for react hot relaoding
+        options.react &&
+          options.watch &&
+          !options.node &&
+          !options.test &&
+          require.resolve('react-hot-loader/babel'),
+      ].filter(Boolean),
+    },
+    extend,
+  );
 
 // get an array of all global node_modules paths
 export const nodePaths = (process.env.NODE_PATH || '')
@@ -66,42 +61,41 @@ export const nodePaths = (process.env.NODE_PATH || '')
   .map(p => path.resolve(p));
 
 // returns an object with all currently available node modules
-export const getNodeModules = options => [
-  // global install
-  ensureExists(path.join(__dirname, '../../node_modules')),
-  // local install with old npm
-  ensureExists(path.join(options.root, 'node_modules')),
-]
-  .filter(Boolean)
-  // add global node paths
-  .concat(nodePaths)
-  .reduce(
-    (nodeModules, nodeModulesPath) =>
-      fs
-        .readdirSync(nodeModulesPath)
-        .filter(x => ['.bin', '.cache'].indexOf(x) === -1)
-        .reduce(
+export const getNodeModules = options =>
+  [
+    // global install
+    ensureExists(path.join(__dirname, '../../node_modules')),
+    // local install with old npm
+    ensureExists(path.join(options.root, 'node_modules')),
+  ]
+    .filter(Boolean)
+    // add global node paths
+    .concat(nodePaths)
+    .reduce(
+      (nodeModules, nodeModulesPath) =>
+        fs.readdirSync(nodeModulesPath).filter(x => ['.bin', '.cache'].indexOf(x) === -1).reduce(
           (pathNodeModules, module) =>
             Object.assign({}, pathNodeModules, {
               [module]: `commonjs ${module}`,
             }),
           nodeModules,
         ),
-    {},
-  );
+      {},
+    );
 
 // to inject keys etc into a client bundle webpack replaces process.env.[NAME] when provided
 export const getEnvironment = async (options) => {
   // run commands in the project root
-  const command = cmd => new Promise((resolve) => {
-    exec(cmd, { cwd: options.root }, (err, stdout, stderr) => {
-      if (err || stderr) {
-        resolve('');
-      } else {
-        resolve(stdout.split('\n').join(''));
-      }
+  const command = cmd =>
+    new Promise((resolve) => {
+      exec(cmd, { cwd: options.root }, (err, stdout, stderr) => {
+        if (err || stderr) {
+          resolve('');
+        } else {
+          resolve(stdout.split('\n').join(''));
+        }
+      });
     });
-  });
 
   // find git env variables via git command line
   const GIT_COMMIT_HASH = await command('git rev-parse HEAD');
@@ -154,4 +148,11 @@ export const getEnvironment = async (options) => {
     { GIT_BRANCH_NAME, GIT_COMMIT_HASH, NODE_ENV, BUILD_TARGET },
     userEnvironment,
   );
+};
+
+export const resolvePath = (options, filename, context) => {
+  if (path.isAbsolute(filename)) {
+    return path.join(options.root, options.src, filename);
+  }
+  return path.join(path.dirname(context), filename);
 };

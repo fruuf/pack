@@ -33,6 +33,7 @@ const pack = async (cwd, args, options = {}) => {
   // eslint-disable-next-line no-console
   if (result[1]) console.warn(result[1]);
 
+
   return globPattern => new Promise((resolve, reject) => {
     glob(
       globPattern,
